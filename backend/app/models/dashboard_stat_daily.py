@@ -1,10 +1,10 @@
 from sqlalchemy import ForeignKey, Float, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base
+from app.models.base import Base, TimestampMixin
 
 
-class DashboardStatDaily(Base):
+class DashboardStatDaily(TimestampMixin, Base):
     __tablename__ = "dashboard_stat_daily"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -16,4 +16,3 @@ class DashboardStatDaily(Base):
     hot_question_top_json: Mapped[list | dict | None] = mapped_column(JSON, nullable=True)
     route_usage_json: Mapped[list | dict | None] = mapped_column(JSON, nullable=True)
     satisfaction_score: Mapped[float | None] = mapped_column(Float, nullable=True)
-    created_at: Mapped[str] = mapped_column(String(32))

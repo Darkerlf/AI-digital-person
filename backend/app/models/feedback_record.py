@@ -1,10 +1,10 @@
 from sqlalchemy import ForeignKey, Float, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base
+from app.models.base import Base, TimestampMixin
 
 
-class FeedbackRecord(Base):
+class FeedbackRecord(TimestampMixin, Base):
     __tablename__ = "feedback_record"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -14,4 +14,3 @@ class FeedbackRecord(Base):
     sentiment: Mapped[str | None] = mapped_column(String(20), nullable=True)
     score: Mapped[float | None] = mapped_column(Float, nullable=True)
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[str] = mapped_column(String(32))

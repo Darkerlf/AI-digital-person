@@ -1,10 +1,10 @@
 from sqlalchemy import ForeignKey, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base
+from app.models.base import Base, TimestampMixin
 
 
-class OperationLog(Base):
+class OperationLog(TimestampMixin, Base):
     __tablename__ = "operation_log"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -14,4 +14,3 @@ class OperationLog(Base):
     target_type: Mapped[str | None] = mapped_column(String(64), nullable=True)
     target_id: Mapped[int | None] = mapped_column(nullable=True)
     detail_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[str] = mapped_column(String(32))

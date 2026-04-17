@@ -49,3 +49,16 @@ class FAQUpdate(BaseModel):
     priority: int | None = None
     status: str | None = None
     source: str | None = None
+
+
+class FAQRead(BaseModel):
+    id: int
+    scenic_area_id: int
+    question: str
+    answer: str
+    category: str | None
+    priority: int
+    status: str
+    source: str | None
+
+    model_config = {"from_attributes": True}

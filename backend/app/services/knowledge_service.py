@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.repositories.knowledge_repo import KnowledgeRepository
+from app.services.knowledge_correction_service import KnowledgeCorrectionService
 from app.schemas.knowledge import FAQCreate, FAQUpdate, KnowledgeDocumentCreate
 from app.tasks.knowledge_chunker import chunk_text
 from app.utils.text_cleaner import normalize_text
@@ -12,7 +13,7 @@ class KnowledgeService:
         self.db = db
         self.repo = KnowledgeRepository(db)
 
-    def create_document(self, payload: KnowledgeDocumentCreate):
+    def create_document(self, payload: KnowledgeDocumentCreate, correction_task_id: int | None = None, current_user=None):
         content_text = normalize_text(payload.content_text)
         document = self.repo.create_document(
             scenic_area_id=payload.scenic_area_id,
@@ -30,6 +31,12 @@ class KnowledgeService:
             self.repo.add_chunk(document_id=document.id, status="active", **chunk)
         self.db.commit()
         self.db.refresh(document)
+        if correction_task_id is not None and current_user is not None:
+            KnowledgeCorrectionService(self.db).link_document_and_resolve(
+                correction_task_id=correction_task_id,
+                document_id=document.id,
+                current_user=current_user,
+            )
         return document
 
     def list_documents(self):
@@ -48,8 +55,15 @@ class KnowledgeService:
     def list_faqs(self):
         return self.repo.list_faqs()
 
-    def create_faq(self, payload: FAQCreate):
-        return self.repo.create_faq(**payload.model_dump())
+    def create_faq(self, payload: FAQCreate, correction_task_id: int | None = None, current_user=None):
+        faq = self.repo.create_faq(**payload.model_dump())
+        if correction_task_id is not None and current_user is not None:
+            KnowledgeCorrectionService(self.db).link_faq_and_resolve(
+                correction_task_id=correction_task_id,
+                faq_id=faq.id,
+                current_user=current_user,
+            )
+        return faq
 
     def update_faq(self, faq_id: int, payload: FAQUpdate):
         faq = self.repo.get_faq(faq_id)

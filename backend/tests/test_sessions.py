@@ -3,6 +3,8 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.models.conversation_message import ConversationMessage
 from app.models.conversation_session import ConversationSession
+from app.models.knowledge_correction_task import KnowledgeCorrectionTask
+from app.models.scenic_area import ScenicArea
 
 
 def test_session_management_lists_unresolved_and_marks_fixed(test_db_session, auth_headers) -> None:
@@ -76,3 +78,73 @@ def test_session_management_lists_unresolved_and_marks_fixed(test_db_session, au
 
     assert detail_response.status_code == 200
     assert detail_response.json()["messages"][0]["question_text"] == "灵山胜境有什么适合半天游的路线？"
+
+
+def test_unresolved_messages_include_scenic_area_and_correction_task_summary(
+    test_db_session, auth_headers
+) -> None:
+    scenic_area = ScenicArea(
+        code="LSSJ",
+        name="灵山胜境",
+        description="测试景区",
+        status="active",
+    )
+    test_db_session.add(scenic_area)
+    test_db_session.commit()
+    test_db_session.refresh(scenic_area)
+
+    conversation = ConversationSession(
+        scenic_area_id=scenic_area.id,
+        session_key="session-002",
+        channel="miniprogram",
+        visitor_id="visitor-002",
+        status="completed",
+    )
+    test_db_session.add(conversation)
+    test_db_session.commit()
+    test_db_session.refresh(conversation)
+
+    message = ConversationMessage(
+        session_id=conversation.id,
+        question_text="景区半日游路线怎么安排？",
+        recognized_text="景区半日游路线怎么安排",
+        answer_text="暂时没有找到合适路线。",
+        matched_document_title=None,
+        latency_ms=2100,
+        feedback_status="disliked",
+        is_missed=True,
+        resolution_status="pending",
+        resolution_note=None,
+    )
+    test_db_session.add(message)
+    test_db_session.commit()
+    test_db_session.refresh(message)
+
+    task = KnowledgeCorrectionTask(
+        source_message_id=message.id,
+        session_id=conversation.id,
+        scenic_area_id=scenic_area.id,
+        question_text=message.question_text,
+        recognized_text=message.recognized_text,
+        feedback_status=message.feedback_status,
+        correction_type="faq",
+        status="open",
+        resolution_note="待补 FAQ",
+        linked_faq_id=None,
+        linked_document_id=None,
+        created_by=1,
+        resolved_by=None,
+    )
+    test_db_session.add(task)
+    test_db_session.commit()
+
+    client = TestClient(app)
+    unresolved_response = client.get("/api/sessions/unresolved", headers=auth_headers)
+
+    assert unresolved_response.status_code == 200
+    assert unresolved_response.json()["items"][0]["scenic_area_id"] == scenic_area.id
+    assert unresolved_response.json()["items"][0]["correction_task"] == {
+        "id": task.id,
+        "correction_type": "faq",
+        "status": "open",
+    }

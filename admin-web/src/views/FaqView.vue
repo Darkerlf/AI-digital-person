@@ -36,6 +36,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 import { apiClient } from '../api/client'
 
@@ -51,6 +52,7 @@ type FaqItem = {
 const faqs = ref<FaqItem[]>([])
 const scenicAreas = ref<Array<{ id: number; name: string }>>([])
 const editingId = ref<number | null>(null)
+const route = useRoute()
 const form = reactive({
   scenic_area_id: '',
   question: '',
@@ -88,6 +90,25 @@ function resetForm() {
   form.priority = 0
 }
 
+function applyTaskPrefill() {
+  if (typeof route.query.scenicAreaId === 'string') {
+    form.scenic_area_id = route.query.scenicAreaId
+  }
+  if (typeof route.query.question === 'string') {
+    form.question = route.query.question
+  }
+}
+
+function buildCreatePath() {
+  if (typeof route.query.taskId !== 'string' || !route.query.taskId) {
+    return '/knowledge/faqs'
+  }
+  const searchParams = new URLSearchParams({
+    correction_task_id: route.query.taskId,
+  })
+  return `/knowledge/faqs?${searchParams.toString()}`
+}
+
 async function handleSubmit() {
   const payload = {
     scenic_area_id: Number(form.scenic_area_id),
@@ -101,9 +122,10 @@ async function handleSubmit() {
   if (editingId.value) {
     await apiClient.put(`/knowledge/faqs/${editingId.value}`, payload)
   } else {
-    await apiClient.post('/knowledge/faqs', payload)
+    await apiClient.post(buildCreatePath(), payload)
   }
   resetForm()
+  applyTaskPrefill()
   await loadPage()
 }
 
@@ -113,6 +135,7 @@ async function removeFaq(id: number) {
 }
 
 onMounted(() => {
+  applyTaskPrefill()
   void loadPage()
 })
 </script>

@@ -47,6 +47,9 @@
             <p>会话：{{ item.session_key }}</p>
             <p>识别文本：{{ item.recognized_text ?? '无' }}</p>
             <p>反馈：{{ item.feedback_status ?? '未反馈' }}</p>
+            <p v-if="item.correction_task">
+              任务：{{ item.correction_task.correction_type }} · {{ item.correction_task.status }}
+            </p>
           </div>
           <div class="session-unresolved__actions">
             <textarea
@@ -54,7 +57,14 @@
               placeholder="填写修正说明，例如：已补充 FAQ / 已更新讲解文档"
               rows="3"
             />
-            <button type="button" @click="resolveMessage(item.id)">标记已修复</button>
+            <div class="session-unresolved__button-row">
+              <template v-if="!item.correction_task">
+                <button type="button" @click="createCorrectionTask(item, 'faq')">创建 FAQ 修正任务</button>
+                <button type="button" @click="createCorrectionTask(item, 'document')">创建文档修正任务</button>
+              </template>
+              <button v-if="item.correction_task" type="button" @click="continueCorrectionTask(item)">继续处理</button>
+              <button type="button" @click="resolveMessage(item.id)">标记已修复</button>
+            </div>
           </div>
         </li>
       </ul>
@@ -64,7 +74,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 
 import { apiClient } from '../api/client'
 
@@ -97,14 +107,21 @@ type SessionDetail = {
 type UnresolvedItem = {
   id: number
   session_id: number
+  scenic_area_id: number | null
   session_key: string
   question_text: string
   recognized_text: string | null
   feedback_status: string | null
   resolution_status: string
+  correction_task?: {
+    id: number
+    correction_type: string
+    status: string
+  } | null
 }
 
 const keyword = ref('')
+const router = useRouter()
 const sessions = ref<SessionListItem[]>([])
 const unresolvedItems = ref<UnresolvedItem[]>([])
 const selectedSession = reactive<SessionDetail>({
@@ -157,6 +174,38 @@ async function resolveMessage(messageId: number) {
   if (currentSessionId && selectedSession.id === currentSessionId) {
     await selectSession(currentSessionId)
   }
+}
+
+function buildTaskTarget(taskId: number, correctionType: string, item: UnresolvedItem) {
+  const query: Record<string, string> = {
+    taskId: String(taskId),
+    question: item.question_text,
+    recognizedText: item.recognized_text ?? '',
+  }
+  if (item.scenic_area_id !== null) {
+    query.scenicAreaId = String(item.scenic_area_id)
+  }
+  if (correctionType === 'faq') {
+    return { path: '/knowledge/faqs', query }
+  }
+  return { path: '/knowledge/documents', query }
+}
+
+async function createCorrectionTask(item: UnresolvedItem, correctionType: 'faq' | 'document') {
+  const response = await apiClient.post('/knowledge/correction-tasks', {
+    source_message_id: item.id,
+    correction_type: correctionType,
+    resolution_note: resolutionNotes[item.id] || '待补充知识修正内容。',
+  })
+  await Promise.all([loadSessions(), loadUnresolved()])
+  await router.push(buildTaskTarget(response.data.id, correctionType, item))
+}
+
+async function continueCorrectionTask(item: UnresolvedItem) {
+  if (!item.correction_task) {
+    return
+  }
+  await router.push(buildTaskTarget(item.correction_task.id, item.correction_task.correction_type, item))
 }
 
 onMounted(async () => {
@@ -230,6 +279,12 @@ onMounted(async () => {
   border-radius: 12px;
   color: #fff;
   background: #2563eb;
+}
+
+.session-unresolved__button-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 960px) {

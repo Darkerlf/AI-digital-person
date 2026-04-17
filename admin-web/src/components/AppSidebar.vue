@@ -26,6 +26,7 @@ const items = [
   { to: '/scenic-spots', label: '景点管理', roles: ['super_admin', 'content_admin'] },
   { to: '/route-templates', label: '路线模板', roles: ['super_admin', 'content_admin'] },
   { to: '/knowledge/documents', label: '知识管理', roles: ['super_admin', 'content_admin'] },
+  { to: '/knowledge/correction-tasks', label: '知识修正任务', roles: ['super_admin', 'content_admin'] },
   { to: '/knowledge/faqs', label: 'FAQ 管理', roles: ['super_admin', 'content_admin'] },
   { to: '/sessions', label: '会话管理', roles: ['super_admin', 'content_admin', 'ops_admin'] },
   { to: '/imports', label: '数据导入', roles: ['super_admin', 'content_admin'] },

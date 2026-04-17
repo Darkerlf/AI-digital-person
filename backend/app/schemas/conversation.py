@@ -40,15 +40,23 @@ class ConversationSessionDetail(BaseModel):
     messages: list[ConversationMessageRead]
 
 
+class UnresolvedCorrectionTaskSummary(BaseModel):
+    id: int
+    correction_type: str
+    status: str
+
+
 class UnresolvedConversationItem(BaseModel):
     id: int
     session_id: int
+    scenic_area_id: int | None
     session_key: str
     question_text: str
     recognized_text: str | None
     feedback_status: str | None
     created_at: datetime
     resolution_status: str
+    correction_task: UnresolvedCorrectionTaskSummary | None = None
 
 
 class ResolveConversationMessageRequest(BaseModel):

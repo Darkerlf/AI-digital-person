@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 
 import { apiClient } from '../api/client'
 
@@ -46,6 +46,7 @@ type KnowledgeDocumentItem = {
 
 const documents = ref<KnowledgeDocumentItem[]>([])
 const scenicAreas = ref<Array<{ id: number; name: string }>>([])
+const route = useRoute()
 const form = reactive({
   scenic_area_id: '',
   title: '',
@@ -63,8 +64,30 @@ async function loadPage() {
   scenicAreas.value = areasResponse.data
 }
 
+function applyTaskPrefill() {
+  if (typeof route.query.scenicAreaId === 'string') {
+    form.scenic_area_id = route.query.scenicAreaId
+  }
+  if (typeof route.query.question === 'string') {
+    form.title = route.query.question
+  }
+  if (typeof route.query.recognizedText === 'string') {
+    form.content_text = route.query.recognizedText
+  }
+}
+
+function buildCreatePath() {
+  if (typeof route.query.taskId !== 'string' || !route.query.taskId) {
+    return '/knowledge/documents/upload'
+  }
+  const searchParams = new URLSearchParams({
+    correction_task_id: route.query.taskId,
+  })
+  return `/knowledge/documents/upload?${searchParams.toString()}`
+}
+
 async function handleSubmit() {
-  await apiClient.post('/knowledge/documents/upload', {
+  await apiClient.post(buildCreatePath(), {
     scenic_area_id: Number(form.scenic_area_id),
     title: form.title,
     doc_type: form.doc_type,
@@ -74,10 +97,12 @@ async function handleSubmit() {
   form.title = ''
   form.source_name = ''
   form.content_text = ''
+  applyTaskPrefill()
   await loadPage()
 }
 
 onMounted(() => {
+  applyTaskPrefill()
   void loadPage()
 })
 </script>

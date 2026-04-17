@@ -12,10 +12,15 @@ router = APIRouter(prefix="/knowledge/documents", tags=["knowledge-documents"])
 @router.post("/upload", response_model=KnowledgeDocumentRead, status_code=status.HTTP_201_CREATED)
 def create_document(
     payload: KnowledgeDocumentCreate,
-    _: object = Depends(require_content_roles),
+    correction_task_id: int | None = None,
+    current_user=Depends(require_content_roles),
     db: Session = Depends(get_db),
 ):
-    return KnowledgeService(db).create_document(payload)
+    return KnowledgeService(db).create_document(
+        payload,
+        correction_task_id=correction_task_id,
+        current_user=current_user,
+    )
 
 
 @router.get("", response_model=list[KnowledgeDocumentRead])

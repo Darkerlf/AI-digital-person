@@ -8,6 +8,7 @@ from app.models.faq_item import FAQItem
 from app.models.feedback_record import FeedbackRecord
 from app.models.import_job import ImportJob
 from app.models.import_job_item import ImportJobItem
+from app.models.knowledge_correction_task import KnowledgeCorrectionTask
 from app.models.knowledge_chunk import KnowledgeChunk
 from app.models.knowledge_document import KnowledgeDocument
 from app.models.operation_log import OperationLog
@@ -31,6 +32,7 @@ def load_all_models() -> None:
         FeedbackRecord,
         ImportJob,
         ImportJobItem,
+        KnowledgeCorrectionTask,
         KnowledgeChunk,
         KnowledgeDocument,
         OperationLog,

@@ -8,6 +8,7 @@ import FeedbackReportView from '../views/FeedbackReportView.vue'
 import FaqView from '../views/FaqView.vue'
 import ImportJobDetailView from '../views/ImportJobDetailView.vue'
 import ImportJobView from '../views/ImportJobView.vue'
+import KnowledgeCorrectionTaskView from '../views/KnowledgeCorrectionTaskView.vue'
 import KnowledgeDocumentDetailView from '../views/KnowledgeDocumentDetailView.vue'
 import KnowledgeDocumentView from '../views/KnowledgeDocumentView.vue'
 import OperationLogView from '../views/OperationLogView.vue'
@@ -87,6 +88,15 @@ export const router = createRouter({
           meta: {
             title: '知识管理',
             description: '维护知识文档并查看分块详情。',
+            roles: ['super_admin', 'content_admin'],
+          },
+        },
+        {
+          path: 'knowledge/correction-tasks',
+          component: KnowledgeCorrectionTaskView,
+          meta: {
+            title: '知识修正任务',
+            description: '跟踪未命中问题到 FAQ 或文档修正结果的闭环。',
             roles: ['super_admin', 'content_admin'],
           },
         },

@@ -1,8 +1,9 @@
-from sqlalchemy import case, func, select
+from sqlalchemy import and_, case, func, select
 from sqlalchemy.orm import Session
 
 from app.models.conversation_message import ConversationMessage
 from app.models.conversation_session import ConversationSession
+from app.models.knowledge_correction_task import KnowledgeCorrectionTask
 
 
 class ConversationRepository:
@@ -58,8 +59,15 @@ class ConversationRepository:
 
     def list_unresolved_messages(self) -> list[dict[str, object]]:
         rows = (
-            self.db.query(ConversationMessage, ConversationSession.session_key)
+            self.db.query(ConversationMessage, ConversationSession.session_key, ConversationSession.scenic_area_id, KnowledgeCorrectionTask)
             .join(ConversationSession, ConversationSession.id == ConversationMessage.session_id)
+            .outerjoin(
+                KnowledgeCorrectionTask,
+                and_(
+                    KnowledgeCorrectionTask.source_message_id == ConversationMessage.id,
+                    KnowledgeCorrectionTask.status == "open",
+                ),
+            )
             .filter(ConversationMessage.resolution_status == "pending")
             .order_by(ConversationMessage.id.desc())
             .all()
@@ -68,14 +76,24 @@ class ConversationRepository:
             {
                 "id": message.id,
                 "session_id": message.session_id,
+                "scenic_area_id": scenic_area_id,
                 "session_key": session_key,
                 "question_text": message.question_text,
                 "recognized_text": message.recognized_text,
                 "feedback_status": message.feedback_status,
                 "created_at": message.created_at,
                 "resolution_status": message.resolution_status,
+                "correction_task": (
+                    {
+                        "id": correction_task.id,
+                        "correction_type": correction_task.correction_type,
+                        "status": correction_task.status,
+                    }
+                    if correction_task is not None
+                    else None
+                ),
             }
-            for message, session_key in rows
+            for message, session_key, scenic_area_id, correction_task in rows
         ]
 
     def get_message(self, message_id: int) -> ConversationMessage | None:

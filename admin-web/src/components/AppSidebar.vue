@@ -23,6 +23,7 @@ const items = [
   { to: '/scenic-spots', label: '景点管理' },
   { to: '/knowledge/documents', label: '知识管理' },
   { to: '/knowledge/faqs', label: 'FAQ 管理' },
+  { to: '/sessions', label: '会话管理' },
   { to: '/imports', label: '数据导入' },
   { to: '/feedback-report', label: '感受度报告' },
   { to: '/digital-humans', label: '数字人配置' },

@@ -14,6 +14,7 @@ import OperationLogView from '../views/OperationLogView.vue'
 import ScenicAreaView from '../views/ScenicAreaView.vue'
 import ScenicSpotDetailView from '../views/ScenicSpotDetailView.vue'
 import ScenicSpotListView from '../views/ScenicSpotListView.vue'
+import SessionManagementView from '../views/SessionManagementView.vue'
 import SettingsAiProviderView from '../views/SettingsAiProviderView.vue'
 
 export const router = createRouter({
@@ -86,6 +87,14 @@ export const router = createRouter({
           meta: {
             title: 'FAQ 管理',
             description: '维护高频问题与标准答案。',
+          },
+        },
+        {
+          path: 'sessions',
+          component: SessionManagementView,
+          meta: {
+            title: '会话记录与问题修正',
+            description: '查看会话记录、未命中问题并推进知识修正闭环。',
           },
         },
         {

@@ -1,5 +1,7 @@
 from app.models.admin_user import AdminUser
 from app.models.ai_provider_config import AIProviderConfig
+from app.models.conversation_message import ConversationMessage
+from app.models.conversation_session import ConversationSession
 from app.models.dashboard_stat_daily import DashboardStatDaily
 from app.models.digital_human_config import DigitalHumanConfig
 from app.models.faq_item import FAQItem
@@ -19,6 +21,8 @@ def load_all_models() -> None:
     _ = (
         AdminUser,
         AIProviderConfig,
+        ConversationMessage,
+        ConversationSession,
         DashboardStatDaily,
         DigitalHumanConfig,
         FAQItem,

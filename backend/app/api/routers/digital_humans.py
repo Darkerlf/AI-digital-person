@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_authenticated_user
+from app.api.deps import require_content_roles
 from app.core.database import get_db
 from app.models.operation_log import OperationLog
 from app.schemas.digital_human import DigitalHumanCreate, DigitalHumanUpdate
@@ -11,14 +11,14 @@ router = APIRouter(prefix="/digital-humans", tags=["digital-humans"])
 
 
 @router.get("")
-def list_digital_humans(_: object = Depends(require_authenticated_user), db: Session = Depends(get_db)):
+def list_digital_humans(_: object = Depends(require_content_roles), db: Session = Depends(get_db)):
     return {"items": DigitalHumanService(db).list_all()}
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_digital_human(
     payload: DigitalHumanCreate,
-    current_user=Depends(require_authenticated_user),
+    current_user=Depends(require_content_roles),
     db: Session = Depends(get_db),
 ):
     item = DigitalHumanService(db).create(payload)
@@ -41,7 +41,7 @@ def create_digital_human(
 def update_digital_human(
     config_id: int,
     payload: DigitalHumanUpdate,
-    current_user=Depends(require_authenticated_user),
+    current_user=Depends(require_content_roles),
     db: Session = Depends(get_db),
 ):
     item = DigitalHumanService(db).update(config_id, payload)

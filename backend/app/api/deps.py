@@ -34,3 +34,17 @@ def get_current_user(
 
 def require_authenticated_user(current_user=Depends(get_current_user)):
     return current_user
+
+
+def require_roles(*roles: str):
+    def dependency(current_user=Depends(get_current_user)):
+        if current_user.role not in roles:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        return current_user
+
+    return dependency
+
+
+require_super_admin = require_roles("super_admin")
+require_content_roles = require_roles("super_admin", "content_admin")
+require_ops_roles = require_roles("super_admin", "ops_admin")

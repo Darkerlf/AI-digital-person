@@ -58,3 +58,45 @@ def auth_headers(test_db_session) -> dict[str, str]:
     )
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture()
+def content_auth_headers(test_db_session) -> dict[str, str]:
+    test_db_session.add(
+        AdminUser(
+            username="content_admin",
+            password_hash=hash_password("content123"),
+            role="content_admin",
+            status="active",
+        )
+    )
+    test_db_session.commit()
+
+    client = TestClient(app)
+    response = client.post(
+        "/api/auth/login",
+        json={"username": "content_admin", "password": "content123"},
+    )
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture()
+def ops_auth_headers(test_db_session) -> dict[str, str]:
+    test_db_session.add(
+        AdminUser(
+            username="ops_admin",
+            password_hash=hash_password("ops123"),
+            role="ops_admin",
+            status="active",
+        )
+    )
+    test_db_session.commit()
+
+    client = TestClient(app)
+    response = client.post(
+        "/api/auth/login",
+        json={"username": "ops_admin", "password": "ops123"},
+    )
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}

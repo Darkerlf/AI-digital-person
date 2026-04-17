@@ -26,7 +26,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { apiClient } from '../api/client'
-import { useAuthStore } from '../stores/auth'
+import { getDefaultRouteByRole, useAuthStore } from '../stores/auth'
 
 const form = reactive({
   username: '',
@@ -44,7 +44,8 @@ async function handleLogin() {
   try {
     const response = await apiClient.post('/auth/login', form)
     authStore.setToken(response.data.access_token)
-    await router.push('/')
+    await authStore.fetchProfile()
+    await router.push(getDefaultRouteByRole(authStore.role))
   } catch (error) {
     errorMessage.value = '登录失败，请检查用户名和密码。'
   } finally {

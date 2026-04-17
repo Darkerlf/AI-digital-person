@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_authenticated_user
+from app.api.deps import require_super_admin
 from app.core.database import get_db
 from app.core.security import hash_password
 from app.models.operation_log import OperationLog
@@ -12,14 +12,14 @@ router = APIRouter(prefix="/settings", tags=["settings"])
 
 
 @router.get("/ai-providers")
-def list_ai_providers(_: object = Depends(require_authenticated_user), db: Session = Depends(get_db)):
+def list_ai_providers(_: object = Depends(require_super_admin), db: Session = Depends(get_db)):
     return {"items": SettingsRepository(db).list_ai_providers()}
 
 
 @router.post("/ai-providers", status_code=status.HTTP_201_CREATED)
 def create_ai_provider(
     payload: AIProviderCreate,
-    current_user=Depends(require_authenticated_user),
+    current_user=Depends(require_super_admin),
     db: Session = Depends(get_db),
 ):
     item = SettingsRepository(db).create_ai_provider(**payload.model_dump())
@@ -42,7 +42,7 @@ def create_ai_provider(
 def update_ai_provider(
     provider_id: int,
     payload: AIProviderUpdate,
-    current_user=Depends(require_authenticated_user),
+    current_user=Depends(require_super_admin),
     db: Session = Depends(get_db),
 ):
     item = SettingsRepository(db).get_ai_provider(provider_id)
@@ -66,14 +66,14 @@ def update_ai_provider(
 
 
 @router.get("/admin-users")
-def list_admin_users(_: object = Depends(require_authenticated_user), db: Session = Depends(get_db)):
+def list_admin_users(_: object = Depends(require_super_admin), db: Session = Depends(get_db)):
     return {"items": SettingsRepository(db).list_admin_users()}
 
 
 @router.post("/admin-users", status_code=status.HTTP_201_CREATED)
 def create_admin_user(
     payload: AdminUserCreate,
-    current_user=Depends(require_authenticated_user),
+    current_user=Depends(require_super_admin),
     db: Session = Depends(get_db),
 ):
     user = SettingsRepository(db).create_admin_user(

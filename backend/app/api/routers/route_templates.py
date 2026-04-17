@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_authenticated_user
+from app.api.deps import require_content_roles
 from app.core.database import get_db
 from app.schemas.route_template import RouteTemplateCreate, RouteTemplateRead, RouteTemplateUpdate
 from app.services.route_template_service import RouteTemplateService
@@ -12,21 +12,21 @@ router = APIRouter(prefix="/route-templates", tags=["route-templates"])
 @router.post("", response_model=RouteTemplateRead, status_code=status.HTTP_201_CREATED)
 def create_template(
     payload: RouteTemplateCreate,
-    _: object = Depends(require_authenticated_user),
+    _: object = Depends(require_content_roles),
     db: Session = Depends(get_db),
 ):
     return RouteTemplateService(db).create(payload)
 
 
 @router.get("")
-def list_templates(_: object = Depends(require_authenticated_user), db: Session = Depends(get_db)):
+def list_templates(_: object = Depends(require_content_roles), db: Session = Depends(get_db)):
     return {"items": RouteTemplateService(db).list_all()}
 
 
 @router.get("/{template_id}", response_model=RouteTemplateRead)
 def get_template(
     template_id: int,
-    _: object = Depends(require_authenticated_user),
+    _: object = Depends(require_content_roles),
     db: Session = Depends(get_db),
 ):
     return RouteTemplateService(db).get_read(template_id)
@@ -36,7 +36,7 @@ def get_template(
 def update_template(
     template_id: int,
     payload: RouteTemplateUpdate,
-    _: object = Depends(require_authenticated_user),
+    _: object = Depends(require_content_roles),
     db: Session = Depends(get_db),
 ):
     return RouteTemplateService(db).update(template_id, payload)
@@ -45,7 +45,7 @@ def update_template(
 @router.delete("/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_template(
     template_id: int,
-    _: object = Depends(require_authenticated_user),
+    _: object = Depends(require_content_roles),
     db: Session = Depends(get_db),
 ):
     RouteTemplateService(db).delete(template_id)

@@ -3,7 +3,7 @@
     <div class="app-sidebar__brand">Scenic Admin</div>
     <nav class="app-sidebar__nav">
       <RouterLink
-        v-for="item in items"
+        v-for="item in visibleItems"
         :key="item.to"
         :to="item.to"
         class="app-sidebar__link"
@@ -15,22 +15,33 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
+import { useAuthStore } from '../stores/auth'
+
 const items = [
-  { to: '/', label: '工作台' },
-  { to: '/scenic-areas', label: '景区管理' },
-  { to: '/scenic-spots', label: '景点管理' },
-  { to: '/route-templates', label: '路线模板' },
-  { to: '/knowledge/documents', label: '知识管理' },
-  { to: '/knowledge/faqs', label: 'FAQ 管理' },
-  { to: '/sessions', label: '会话管理' },
-  { to: '/imports', label: '数据导入' },
-  { to: '/feedback-report', label: '感受度报告' },
-  { to: '/digital-humans', label: '数字人配置' },
-  { to: '/settings/ai-providers', label: 'AI 配置' },
-  { to: '/operation-logs', label: '操作日志' },
+  { to: '/', label: '工作台', roles: ['super_admin', 'ops_admin'] },
+  { to: '/scenic-areas', label: '景区管理', roles: ['super_admin', 'content_admin'] },
+  { to: '/scenic-spots', label: '景点管理', roles: ['super_admin', 'content_admin'] },
+  { to: '/route-templates', label: '路线模板', roles: ['super_admin', 'content_admin'] },
+  { to: '/knowledge/documents', label: '知识管理', roles: ['super_admin', 'content_admin'] },
+  { to: '/knowledge/faqs', label: 'FAQ 管理', roles: ['super_admin', 'content_admin'] },
+  { to: '/sessions', label: '会话管理', roles: ['super_admin', 'content_admin', 'ops_admin'] },
+  { to: '/imports', label: '数据导入', roles: ['super_admin', 'content_admin'] },
+  { to: '/feedback-report', label: '感受度报告', roles: ['super_admin', 'ops_admin'] },
+  { to: '/digital-humans', label: '数字人配置', roles: ['super_admin', 'content_admin'] },
+  { to: '/settings/ai-providers', label: 'AI 配置', roles: ['super_admin'] },
+  { to: '/operation-logs', label: '操作日志', roles: ['super_admin', 'ops_admin'] },
 ]
+
+const authStore = useAuthStore()
+const visibleItems = computed(() => {
+  if (!authStore.role) {
+    return []
+  }
+  return items.filter((item) => item.roles.includes(authStore.role))
+})
 </script>
 
 <style scoped>

@@ -17,6 +17,7 @@ import ScenicSpotDetailView from '../views/ScenicSpotDetailView.vue'
 import ScenicSpotListView from '../views/ScenicSpotListView.vue'
 import SessionManagementView from '../views/SessionManagementView.vue'
 import SettingsAiProviderView from '../views/SettingsAiProviderView.vue'
+import { getDefaultRouteByRole, useAuthStore } from '../stores/auth'
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -32,6 +33,7 @@ export const router = createRouter({
           meta: {
             title: '运营概览',
             description: '查看事件量、知识文档、景点数据与导入任务概览。',
+            roles: ['super_admin', 'ops_admin'],
           },
         },
         {
@@ -40,6 +42,7 @@ export const router = createRouter({
           meta: {
             title: '数据大屏',
             description: '查看热门景点与游客行为趋势。',
+            roles: ['super_admin', 'ops_admin'],
           },
         },
         {
@@ -48,6 +51,7 @@ export const router = createRouter({
           meta: {
             title: '景区管理',
             description: '维护景区主数据。',
+            roles: ['super_admin', 'content_admin'],
           },
         },
         {
@@ -56,6 +60,7 @@ export const router = createRouter({
           meta: {
             title: '景点管理',
             description: '维护景点列表并进入详情页。',
+            roles: ['super_admin', 'content_admin'],
           },
         },
         {
@@ -64,6 +69,7 @@ export const router = createRouter({
           meta: {
             title: '景点详情',
             description: '更新景点基础信息与开放状态。',
+            roles: ['super_admin', 'content_admin'],
           },
         },
         {
@@ -72,6 +78,7 @@ export const router = createRouter({
           meta: {
             title: '路线模板',
             description: '维护路线模板并预览推荐结果。',
+            roles: ['super_admin', 'content_admin'],
           },
         },
         {
@@ -80,6 +87,7 @@ export const router = createRouter({
           meta: {
             title: '知识管理',
             description: '维护知识文档并查看分块详情。',
+            roles: ['super_admin', 'content_admin'],
           },
         },
         {
@@ -88,6 +96,7 @@ export const router = createRouter({
           meta: {
             title: '知识文档详情',
             description: '查看文档内容与知识分块。',
+            roles: ['super_admin', 'content_admin'],
           },
         },
         {
@@ -96,6 +105,7 @@ export const router = createRouter({
           meta: {
             title: 'FAQ 管理',
             description: '维护高频问题与标准答案。',
+            roles: ['super_admin', 'content_admin'],
           },
         },
         {
@@ -104,6 +114,7 @@ export const router = createRouter({
           meta: {
             title: '会话记录与问题修正',
             description: '查看会话记录、未命中问题并推进知识修正闭环。',
+            roles: ['super_admin', 'content_admin', 'ops_admin'],
           },
         },
         {
@@ -112,6 +123,7 @@ export const router = createRouter({
           meta: {
             title: '数据导入',
             description: '触发导入任务并查看任务列表。',
+            roles: ['super_admin', 'content_admin'],
           },
         },
         {
@@ -120,6 +132,7 @@ export const router = createRouter({
           meta: {
             title: '游客感受度报告',
             description: '查看满意度分布、平均评分与运营建议。',
+            roles: ['super_admin', 'ops_admin'],
           },
         },
         {
@@ -128,6 +141,7 @@ export const router = createRouter({
           meta: {
             title: '导入任务详情',
             description: '查看导入任务结果与明细。',
+            roles: ['super_admin', 'content_admin'],
           },
         },
         {
@@ -136,6 +150,7 @@ export const router = createRouter({
           meta: {
             title: '数字人配置',
             description: '维护数字人欢迎语、音色和模式。',
+            roles: ['super_admin', 'content_admin'],
           },
         },
         {
@@ -144,6 +159,7 @@ export const router = createRouter({
           meta: {
             title: 'AI 配置',
             description: '维护模型提供商配置。',
+            roles: ['super_admin'],
           },
         },
         {
@@ -152,6 +168,7 @@ export const router = createRouter({
           meta: {
             title: '操作日志',
             description: '查看后台写操作审计记录。',
+            roles: ['super_admin', 'ops_admin'],
           },
         },
       ],
@@ -159,13 +176,30 @@ export const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
-  const token = localStorage.getItem('accessToken')
-  if (to.path !== '/login' && !token) {
+router.beforeEach(async (to) => {
+  const authStore = useAuthStore()
+
+  if (to.path !== '/login' && !authStore.accessToken) {
     return '/login'
   }
-  if (to.path === '/login' && token) {
-    return '/'
+
+  if (authStore.accessToken && !authStore.profileLoaded) {
+    try {
+      await authStore.fetchProfile()
+    } catch (error) {
+      authStore.clearAuth()
+      return '/login'
+    }
   }
+
+  if (to.path === '/login' && authStore.accessToken) {
+    return getDefaultRouteByRole(authStore.role)
+  }
+
+  const roles = to.meta.roles as string[] | undefined
+  if (roles && authStore.role && !roles.includes(authStore.role)) {
+    return getDefaultRouteByRole(authStore.role)
+  }
+
   return true
 })

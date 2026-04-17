@@ -26,3 +26,88 @@ input {
 #app {
   min-height: 100vh;
 }
+
+.page-shell {
+  display: grid;
+  gap: 20px;
+}
+
+.page-shell__grid {
+  display: grid;
+  gap: 20px;
+}
+
+.page-shell__panel {
+  padding: 20px;
+  border: 1px solid #dbe4f0;
+  border-radius: 20px;
+  background: #fff;
+}
+
+.page-shell__panel h2 {
+  margin: 0 0 16px;
+}
+
+.page-shell__form {
+  display: grid;
+  gap: 12px;
+}
+
+.page-shell__form input,
+.page-shell__form select,
+.page-shell__form textarea,
+.page-shell__form button {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+}
+
+.page-shell__form button,
+.page-shell__toolbar button,
+.page-shell__actions button {
+  width: fit-content;
+  color: #fff;
+  background: #2563eb;
+  border: 0;
+}
+
+.page-shell__toolbar {
+  display: flex;
+  justify-content: end;
+}
+
+.page-shell__list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.page-shell__list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 16px;
+  background: #f8fbff;
+}
+
+.page-shell__list strong,
+.page-shell__list p {
+  margin: 0;
+}
+
+.page-shell__actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.page-shell__pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

@@ -3,7 +3,7 @@
     <div class="login-card">
       <p class="login-card__eyebrow">景区导览服务 AI 数字人</p>
       <h1>后台登录</h1>
-      <form class="login-form">
+      <form class="login-form" @submit.prevent="handleLogin">
         <label class="login-form__field">
           <span>用户名</span>
           <input v-model="form.username" autocomplete="username" type="text" />
@@ -12,19 +12,45 @@
           <span>密码</span>
           <input v-model="form.password" autocomplete="current-password" type="password" />
         </label>
-        <button type="button">登录</button>
+        <p v-if="errorMessage" class="login-form__error">{{ errorMessage }}</p>
+        <button :disabled="isSubmitting" type="submit">
+          {{ isSubmitting ? '登录中...' : '登录' }}
+        </button>
       </form>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+import { apiClient } from '../api/client'
+import { useAuthStore } from '../stores/auth'
 
 const form = reactive({
   username: '',
   password: '',
 })
+
+const router = useRouter()
+const authStore = useAuthStore()
+const errorMessage = ref('')
+const isSubmitting = ref(false)
+
+async function handleLogin() {
+  errorMessage.value = ''
+  isSubmitting.value = true
+  try {
+    const response = await apiClient.post('/auth/login', form)
+    authStore.setToken(response.data.access_token)
+    await router.push('/')
+  } catch (error) {
+    errorMessage.value = '登录失败，请检查用户名和密码。'
+  } finally {
+    isSubmitting.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -90,5 +116,10 @@ const form = reactive({
   border-radius: 12px;
   color: #fff;
   background: #1d4ed8;
+}
+
+.login-form__error {
+  margin: 0;
+  color: #b91c1c;
 }
 </style>

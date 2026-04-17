@@ -27,3 +27,4 @@ class ScenicSpot(TimestampMixin, Base):
 
     scenic_area = relationship("ScenicArea", back_populates="spots")
     tags = relationship("ScenicSpotTag", back_populates="scenic_spot", cascade="all, delete-orphan")
+    route_template_spots = relationship("RouteTemplateSpot", back_populates="scenic_spot")

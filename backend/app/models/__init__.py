@@ -11,6 +11,8 @@ from app.models.import_job_item import ImportJobItem
 from app.models.knowledge_chunk import KnowledgeChunk
 from app.models.knowledge_document import KnowledgeDocument
 from app.models.operation_log import OperationLog
+from app.models.route_template import RouteTemplate
+from app.models.route_template_spot import RouteTemplateSpot
 from app.models.scenic_area import ScenicArea
 from app.models.scenic_spot import ScenicSpot
 from app.models.scenic_spot_tag import ScenicSpotTag
@@ -32,6 +34,8 @@ def load_all_models() -> None:
         KnowledgeChunk,
         KnowledgeDocument,
         OperationLog,
+        RouteTemplate,
+        RouteTemplateSpot,
         ScenicArea,
         ScenicSpot,
         ScenicSpotTag,

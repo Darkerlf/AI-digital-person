@@ -21,6 +21,7 @@ const items = [
   { to: '/', label: '工作台' },
   { to: '/scenic-areas', label: '景区管理' },
   { to: '/scenic-spots', label: '景点管理' },
+  { to: '/route-templates', label: '路线模板' },
   { to: '/knowledge/documents', label: '知识管理' },
   { to: '/knowledge/faqs', label: 'FAQ 管理' },
   { to: '/sessions', label: '会话管理' },

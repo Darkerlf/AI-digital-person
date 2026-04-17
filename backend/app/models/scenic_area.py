@@ -14,3 +14,4 @@ class ScenicArea(TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(20), default="active")
 
     spots = relationship("ScenicSpot", back_populates="scenic_area")
+    route_templates = relationship("RouteTemplate", back_populates="scenic_area")

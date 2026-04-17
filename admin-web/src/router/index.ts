@@ -11,6 +11,7 @@ import ImportJobView from '../views/ImportJobView.vue'
 import KnowledgeDocumentDetailView from '../views/KnowledgeDocumentDetailView.vue'
 import KnowledgeDocumentView from '../views/KnowledgeDocumentView.vue'
 import OperationLogView from '../views/OperationLogView.vue'
+import RouteTemplateView from '../views/RouteTemplateView.vue'
 import ScenicAreaView from '../views/ScenicAreaView.vue'
 import ScenicSpotDetailView from '../views/ScenicSpotDetailView.vue'
 import ScenicSpotListView from '../views/ScenicSpotListView.vue'
@@ -63,6 +64,14 @@ export const router = createRouter({
           meta: {
             title: '景点详情',
             description: '更新景点基础信息与开放状态。',
+          },
+        },
+        {
+          path: 'route-templates',
+          component: RouteTemplateView,
+          meta: {
+            title: '路线模板',
+            description: '维护路线模板并预览推荐结果。',
           },
         },
         {

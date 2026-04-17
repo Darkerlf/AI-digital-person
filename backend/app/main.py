@@ -8,6 +8,8 @@ from app.api.routers.health import router as health_router
 from app.api.routers.imports import router as imports_router
 from app.api.routers.knowledge_documents import router as knowledge_documents_router
 from app.api.routers.operation_logs import router as operation_logs_router
+from app.api.routers.route_recommendations import router as route_recommendations_router
+from app.api.routers.route_templates import router as route_templates_router
 from app.api.routers.scenic_areas import router as scenic_areas_router
 from app.api.routers.scenic_spots import router as scenic_spots_router
 from app.api.routers.sessions import router as sessions_router
@@ -26,4 +28,6 @@ app.include_router(dashboard_router, prefix=settings.api_prefix)
 app.include_router(digital_humans_router, prefix=settings.api_prefix)
 app.include_router(settings_router, prefix=settings.api_prefix)
 app.include_router(operation_logs_router, prefix=settings.api_prefix)
+app.include_router(route_recommendations_router, prefix=settings.api_prefix)
+app.include_router(route_templates_router, prefix=settings.api_prefix)
 app.include_router(sessions_router, prefix=settings.api_prefix)

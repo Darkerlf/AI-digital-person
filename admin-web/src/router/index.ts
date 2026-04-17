@@ -4,6 +4,7 @@ import AdminLayout from '../layouts/AdminLayout.vue'
 import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import DigitalHumanView from '../views/DigitalHumanView.vue'
+import FeedbackReportView from '../views/FeedbackReportView.vue'
 import FaqView from '../views/FaqView.vue'
 import ImportJobDetailView from '../views/ImportJobDetailView.vue'
 import ImportJobView from '../views/ImportJobView.vue'
@@ -93,6 +94,14 @@ export const router = createRouter({
           meta: {
             title: '数据导入',
             description: '触发导入任务并查看任务列表。',
+          },
+        },
+        {
+          path: 'feedback-report',
+          component: FeedbackReportView,
+          meta: {
+            title: '游客感受度报告',
+            description: '查看满意度分布、平均评分与运营建议。',
           },
         },
         {

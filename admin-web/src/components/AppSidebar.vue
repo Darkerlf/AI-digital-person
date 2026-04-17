@@ -24,6 +24,7 @@ const items = [
   { to: '/knowledge/documents', label: '知识管理' },
   { to: '/knowledge/faqs', label: 'FAQ 管理' },
   { to: '/imports', label: '数据导入' },
+  { to: '/feedback-report', label: '感受度报告' },
   { to: '/digital-humans', label: '数字人配置' },
   { to: '/settings/ai-providers', label: 'AI 配置' },
   { to: '/operation-logs', label: '操作日志' },

@@ -37,6 +37,41 @@ class DashboardService:
             trends[day] = trends.get(day, 0) + 1
         return {"items": [{"date": key, "count": value} for key, value in sorted(trends.items())]}
 
+    def get_feedback_report(self) -> dict[str, object]:
+        rows = self.repo.list_feedback_records()
+        if not rows:
+            return {
+                "total_feedback": 0,
+                "average_score": None,
+                "sentiment_distribution": {"positive": 0, "neutral": 0, "negative": 0},
+                "suggestion_summary": "暂无游客反馈数据，建议先打通游客端反馈采集。",
+            }
+
+        sentiment_distribution = {"positive": 0, "neutral": 0, "negative": 0}
+        scores = [row.score for row in rows if row.score is not None]
+        for row in rows:
+            if row.sentiment in sentiment_distribution:
+                sentiment_distribution[row.sentiment] += 1
+
+        average_score = round(sum(scores) / len(scores), 1) if scores else None
+        negative_rows = [
+            row for row in rows if row.sentiment == "negative" or (row.score is not None and row.score < 3.0)
+        ]
+        if negative_rows:
+            focus = negative_rows[0].content or "负面反馈"
+            suggestion_summary = f"近期游客反馈集中在：{focus}，建议优先优化相关讲解或路线体验。"
+        elif average_score is not None and average_score >= 4.0:
+            suggestion_summary = "整体满意度较高，建议继续放大优质讲解内容并保持数字人回答稳定性。"
+        else:
+            suggestion_summary = "满意度处于中性区间，建议补充景点故事内容并优化路线推荐准确性。"
+
+        return {
+            "total_feedback": len(rows),
+            "average_score": average_score,
+            "sentiment_distribution": sentiment_distribution,
+            "suggestion_summary": suggestion_summary,
+        }
+
     def import_behavior_events(self, source_path: str):
         path = Path(source_path)
         if not path.exists():

@@ -2,6 +2,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.dashboard_stat_daily import DashboardStatDaily
+from app.models.feedback_record import FeedbackRecord
 from app.models.import_job import ImportJob
 from app.models.knowledge_document import KnowledgeDocument
 from app.models.scenic_spot import ScenicSpot
@@ -23,6 +24,9 @@ class DashboardRepository:
 
     def recent_jobs(self) -> list[ImportJob]:
         return self.db.execute(select(ImportJob).order_by(ImportJob.id.desc()).limit(5)).scalars().all()
+
+    def list_feedback_records(self) -> list[FeedbackRecord]:
+        return self.db.execute(select(FeedbackRecord).order_by(FeedbackRecord.id.desc())).scalars().all()
 
     def upsert_daily_stat(self, stat_date: str, payload: dict[str, object]) -> DashboardStatDaily:
         stat = self.db.execute(

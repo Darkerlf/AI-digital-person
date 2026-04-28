@@ -13,3 +13,4 @@ httpx==0.28.1
 openai>=1.30.0
 faiss-cpu>=1.8.0
 jieba>=0.42.1
+edge-tts>=6.1.0

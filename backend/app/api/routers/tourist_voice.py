@@ -2,13 +2,14 @@ import io
 import tempfile
 import os
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, UploadFile, File as FastAPIFile
 from fastapi.responses import StreamingResponse, FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.services.tts_service import TTSService
+from app.services.asr_service import ASRService
 
 router = APIRouter(prefix="/tourist/voice", tags=["tourist-voice"])
 
@@ -54,3 +55,18 @@ async def text_to_speech_file(payload: TTSRequest):
         await tts.synthesize_to_file(payload.text, output_path, voice=payload.voice)
 
     return FileResponse(output_path, media_type="audio/mpeg", filename=filename)
+
+
+@router.post("/asr")
+async def speech_to_text(audio: UploadFile = FastAPIFile(...)):
+    """接收音频文件，返回识别文字"""
+    audio_bytes = await audio.read()
+
+    asr = ASRService()
+    text = await asr.recognize_from_file(audio_bytes)
+
+    # 如果 ASR 返回空，使用模拟识别（开发阶段）
+    if not text:
+        text = "（语音识别功能开发中，请使用文字输入）"
+
+    return {"text": text}

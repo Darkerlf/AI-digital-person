@@ -2,10 +2,7 @@
   <view class="page">
     <!-- Avatar area -->
     <view class="avatar-area">
-      <view class="avatar-placeholder">
-        <text class="avatar-emoji">🧑‍🏫</text>
-        <text class="avatar-label">灵山导游</text>
-      </view>
+      <DigitalHuman :is-speaking="isSpeaking" :is-thinking="chatStore.isGenerating" />
     </view>
 
     <!-- Message list -->
@@ -79,6 +76,7 @@ import { useAuthStore } from '../../stores/auth'
 import { chatWithProgressiveDisplay } from '../../utils/sse'
 import { VoiceRecorder } from '../../utils/recorder'
 import { TTSPlayer } from '../../utils/player'
+import DigitalHuman from '../../components/DigitalHuman.vue'
 
 const chatStore = useChatStore()
 const authStore = useAuthStore()
@@ -86,6 +84,7 @@ const authStore = useAuthStore()
 const inputText = ref('')
 const scrollTarget = ref('msg-bottom')
 const isRecording = ref(false)
+const isSpeaking = ref(false)
 let recorder: VoiceRecorder | null = null
 let player: TTSPlayer | null = null
 
@@ -194,14 +193,17 @@ function sendMessage() {
     },
     (chunk: string) => {
       chatStore.appendToMessage(placeholderId, chunk)
+      isSpeaking.value = true
     },
     (fullText: string) => {
       chatStore.updateAssistantMessage(placeholderId, fullText)
       chatStore.isGenerating = false
+      isSpeaking.value = false
     },
     (err: Error) => {
       chatStore.updateAssistantMessage(placeholderId, '抱歉，暂时无法回答，请稍后再试。')
       chatStore.isGenerating = false
+      isSpeaking.value = false
       console.error('Chat error:', err)
     },
   )

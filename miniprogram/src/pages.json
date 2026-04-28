@@ -1,0 +1,58 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "灵山胜境"
+      }
+    },
+    {
+      "path": "pages/guide/guide",
+      "style": {
+        "navigationBarTitleText": "AI导游"
+      }
+    },
+    {
+      "path": "pages/map/map",
+      "style": {
+        "navigationBarTitleText": "地图导览"
+      }
+    },
+    {
+      "path": "pages/my/my",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "灵山胜境",
+    "navigationBarBackgroundColor": "#1a73e8",
+    "backgroundColor": "#f5f5f5"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#1a73e8",
+    "borderStyle": "white",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/guide/guide",
+        "text": "AI导游"
+      },
+      {
+        "pagePath": "pages/map/map",
+        "text": "地图"
+      },
+      {
+        "pagePath": "pages/my/my",
+        "text": "我的"
+      }
+    ]
+  }
+}

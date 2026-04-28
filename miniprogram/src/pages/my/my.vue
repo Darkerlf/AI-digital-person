@@ -1,0 +1,3 @@
+<template>
+  <view class="page"><text>我的</text></view>
+</template>

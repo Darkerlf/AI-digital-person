@@ -49,6 +49,14 @@
 
     <!-- Input area -->
     <view class="input-area">
+      <view
+        :class="['voice-btn', { recording: isRecording }]"
+        @touchstart="startRecording"
+        @touchend="stopRecording"
+        @touchcancel="cancelRecording"
+      >
+        <text>{{ isRecording ? '松开' : '按住说话' }}</text>
+      </view>
       <input
         v-model="inputText"
         class="msg-input"
@@ -65,16 +73,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, watch } from 'vue'
+import { ref, nextTick, watch, onMounted } from 'vue'
 import { useChatStore } from '../../stores/chat'
 import { useAuthStore } from '../../stores/auth'
 import { chatWithProgressiveDisplay } from '../../utils/sse'
+import { VoiceRecorder } from '../../utils/recorder'
+import { TTSPlayer } from '../../utils/player'
 
 const chatStore = useChatStore()
 const authStore = useAuthStore()
 
 const inputText = ref('')
 const scrollTarget = ref('msg-bottom')
+const isRecording = ref(false)
+let recorder: VoiceRecorder | null = null
+let player: TTSPlayer | null = null
 
 const quickQuestions = [
   '灵山大佛多高？',
@@ -101,6 +114,57 @@ watch(
     })
   }
 )
+
+onMounted(() => {
+  recorder = new VoiceRecorder({
+    onStart: () => { isRecording.value = true },
+    onStop: (filePath) => {
+      isRecording.value = false
+      uploadAndRecognize(filePath)
+    },
+    onError: () => {
+      isRecording.value = false
+      uni.showToast({ title: '录音失败', icon: 'none' })
+    },
+  })
+
+  player = new TTSPlayer({
+    onEnded: () => { /* 播放结束 */ },
+  })
+})
+
+function startRecording() {
+  recorder?.start()
+}
+
+function stopRecording() {
+  recorder?.stop()
+}
+
+function cancelRecording() {
+  isRecording.value = false
+  recorder?.stop()
+}
+
+function uploadAndRecognize(filePath: string) {
+  uni.uploadFile({
+    url: 'http://localhost:8000/api/tourist/voice/asr',
+    filePath,
+    name: 'audio',
+    success: (res) => {
+      if (res.statusCode === 200) {
+        const data = JSON.parse(res.data) as { text: string }
+        if (data.text) {
+          inputText.value = data.text
+          sendMessage()
+        }
+      }
+    },
+    fail: () => {
+      uni.showToast({ title: '语音识别失败', icon: 'none' })
+    },
+  })
+}
 
 function sendQuickQuestion(q: string) {
   inputText.value = q
@@ -171,6 +235,10 @@ function sendMessage() {
 .msg-intent { display: block; font-size: 20rpx; color: #1a73e8; margin-top: 8rpx; opacity: 0.7; }
 .input-area { display: flex; align-items: center; gap: 16rpx; padding: 16rpx 24rpx; background: #ffffff; border-top: 1rpx solid #e5e5e5; padding-bottom: calc(16rpx + env(safe-area-inset-bottom)); }
 .msg-input { flex: 1; height: 72rpx; background: #f5f5f5; border-radius: 36rpx; padding: 0 30rpx; font-size: 28rpx; }
+.voice-btn { width: 160rpx; height: 72rpx; background: #f0f2f5; border-radius: 36rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.voice-btn.recording { background: #ff4444; }
+.voice-btn text { font-size: 24rpx; color: #666; }
+.voice-btn.recording text { color: #ffffff; }
 .send-btn { width: 120rpx; height: 72rpx; background: #1a73e8; border-radius: 36rpx; display: flex; align-items: center; justify-content: center; }
 .send-btn text { color: #ffffff; font-size: 28rpx; }
 .send-btn.disabled { opacity: 0.5; }

@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Integer, String, Text
+from sqlalchemy import ForeignKey, Integer, LargeBinary, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin
@@ -14,3 +14,4 @@ class KnowledgeChunk(TimestampMixin, Base):
     token_count: Mapped[int] = mapped_column(Integer)
     source_section: Mapped[str | None] = mapped_column(String(255), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="active")
+    embedding_vector: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)

@@ -1,32 +1,56 @@
 <template>
   <section class="page-shell">
     <div class="page-shell__grid">
-      <form class="page-shell__panel page-shell__form" @submit.prevent="handleSubmit">
-        <h2>新增知识文档</h2>
-        <select v-model="form.scenic_area_id">
-          <option value="">选择景区</option>
-          <option v-for="item in scenicAreas" :key="item.id" :value="String(item.id)">
-            {{ item.name }}
-          </option>
-        </select>
-        <input v-model="form.title" placeholder="文档标题" type="text" />
-        <input v-model="form.doc_type" placeholder="文档类型" type="text" />
-        <input v-model="form.source_name" placeholder="来源名称" type="text" />
-        <textarea v-model="form.content_text" placeholder="文档内容" rows="6" />
-        <button type="submit">上传文档</button>
-      </form>
-      <section class="page-shell__panel">
-        <h2>文档列表</h2>
-        <ul class="page-shell__list">
-          <li v-for="item in documents" :key="item.id">
-            <div>
-              <strong>{{ item.title }}</strong>
-              <p>{{ item.doc_type }} · {{ item.source_name }}</p>
-            </div>
-            <RouterLink :to="`/knowledge/documents/${item.id}`">查看</RouterLink>
-          </li>
-        </ul>
-      </section>
+      <el-card class="page-shell__panel">
+        <template #header>
+          <span>新增知识文档</span>
+        </template>
+        <el-form :model="form" label-position="top" @submit.prevent="handleSubmit">
+          <el-form-item label="景区">
+            <el-select v-model="form.scenic_area_id" placeholder="选择景区" style="width: 100%">
+              <el-option
+                v-for="item in scenicAreas"
+                :key="item.id"
+                :label="item.name"
+                :value="String(item.id)"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="文档标题">
+            <el-input v-model="form.title" placeholder="文档标题" />
+          </el-form-item>
+          <el-form-item label="文档类型">
+            <el-input v-model="form.doc_type" placeholder="文档类型" />
+          </el-form-item>
+          <el-form-item label="来源名称">
+            <el-input v-model="form.source_name" placeholder="来源名称" />
+          </el-form-item>
+          <el-form-item label="文档内容">
+            <el-input v-model="form.content_text" type="textarea" :rows="6" placeholder="文档内容" />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" native-type="submit">上传文档</el-button>
+          </el-form-item>
+        </el-form>
+      </el-card>
+
+      <el-card class="page-shell__panel">
+        <template #header>
+          <span>文档列表</span>
+        </template>
+        <el-table :data="documents" stripe style="width: 100%">
+          <el-table-column prop="title" label="标题" />
+          <el-table-column prop="doc_type" label="类型" width="120" />
+          <el-table-column prop="source_name" label="来源" width="150" />
+          <el-table-column label="操作" width="100">
+            <template #default="{ row }">
+              <RouterLink :to="`/knowledge/documents/${row.id}`">
+                <el-button size="small" type="primary" link>查看</el-button>
+              </RouterLink>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-card>
     </div>
   </section>
 </template>

@@ -1,35 +1,62 @@
 <template>
   <section class="page-shell">
     <div class="page-shell__grid">
-      <form class="page-shell__panel page-shell__form" @submit.prevent="handleSubmit">
-        <h2>{{ editingId ? '编辑 FAQ' : '新增 FAQ' }}</h2>
-        <select v-model="form.scenic_area_id">
-          <option value="">选择景区</option>
-          <option v-for="item in scenicAreas" :key="item.id" :value="String(item.id)">
-            {{ item.name }}
-          </option>
-        </select>
-        <input v-model="form.question" placeholder="问题" type="text" />
-        <textarea v-model="form.answer" placeholder="答案" rows="4" />
-        <input v-model="form.category" placeholder="分类" type="text" />
-        <input v-model.number="form.priority" placeholder="优先级" type="number" />
-        <button type="submit">{{ editingId ? '更新 FAQ' : '创建 FAQ' }}</button>
-      </form>
-      <section class="page-shell__panel">
-        <h2>FAQ 列表</h2>
-        <ul class="page-shell__list">
-          <li v-for="item in faqs" :key="item.id">
-            <div>
-              <strong>{{ item.question }}</strong>
-              <p>{{ item.category ?? '未分类' }}</p>
-            </div>
-            <div class="page-shell__actions">
-              <button type="button" @click="startEdit(item)">编辑</button>
-              <button type="button" @click="removeFaq(item.id)">删除</button>
-            </div>
-          </li>
-        </ul>
-      </section>
+      <el-card class="page-shell__panel">
+        <template #header>
+          <span>{{ editingId ? '编辑 FAQ' : '新增 FAQ' }}</span>
+        </template>
+        <el-form :model="form" label-position="top" @submit.prevent="handleSubmit">
+          <el-form-item label="景区">
+            <el-select v-model="form.scenic_area_id" placeholder="选择景区" style="width: 100%">
+              <el-option
+                v-for="item in scenicAreas"
+                :key="item.id"
+                :label="item.name"
+                :value="String(item.id)"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="问题">
+            <el-input v-model="form.question" placeholder="问题" />
+          </el-form-item>
+          <el-form-item label="答案">
+            <el-input v-model="form.answer" type="textarea" :rows="4" placeholder="答案" />
+          </el-form-item>
+          <el-form-item label="分类">
+            <el-input v-model="form.category" placeholder="分类" />
+          </el-form-item>
+          <el-form-item label="优先级">
+            <el-input-number v-model="form.priority" :min="0" :max="100" />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" native-type="submit">
+              {{ editingId ? '更新 FAQ' : '创建 FAQ' }}
+            </el-button>
+            <el-button v-if="editingId" @click="resetForm">取消</el-button>
+          </el-form-item>
+        </el-form>
+      </el-card>
+
+      <el-card class="page-shell__panel">
+        <template #header>
+          <span>FAQ 列表</span>
+        </template>
+        <el-table :data="faqs" stripe style="width: 100%">
+          <el-table-column prop="question" label="问题" />
+          <el-table-column label="分类" width="120">
+            <template #default="{ row }">
+              <el-tag>{{ row.category ?? '未分类' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="priority" label="优先级" width="80" />
+          <el-table-column label="操作" width="160">
+            <template #default="{ row }">
+              <el-button size="small" type="primary" @click="startEdit(row)">编辑</el-button>
+              <el-button size="small" type="danger" @click="removeFaq(row.id)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-card>
     </div>
   </section>
 </template>

@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 
 from openai import AsyncOpenAI
@@ -47,12 +48,22 @@ class LLMClient:
         history: list[dict[str, str]] | None = None,
     ) -> LLMResult:
         messages = self._build_messages(system_prompt, user_message, context, history)
-        response = await self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
-        )
+        try:
+            response = await asyncio.wait_for(
+                self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    max_tokens=self.max_tokens,
+                    temperature=self.temperature,
+                ),
+                timeout=30.0,
+            )
+        except asyncio.TimeoutError:
+            return LLMResult(
+                text="抱歉，AI服务响应超时，请稍后重试。",
+                prompt_tokens=0,
+                completion_tokens=0,
+            )
         choice = response.choices[0]
         usage = response.usage
         return LLMResult(
@@ -83,10 +94,16 @@ class LLMClient:
 
     async def generate_text(self, prompt: str) -> str:
         """Simple single-prompt generation (used by intent classifier)."""
-        response = await self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=256,
-            temperature=0.1,
-        )
+        try:
+            response = await asyncio.wait_for(
+                self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=256,
+                    temperature=0.1,
+                ),
+                timeout=30.0,
+            )
+        except asyncio.TimeoutError:
+            return "scenic_qa"
         return response.choices[0].message.content or ""

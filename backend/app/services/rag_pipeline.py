@@ -1,4 +1,5 @@
 import jieba
+from cachetools import TTLCache
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -26,6 +27,7 @@ class RAGPipeline:
         self.embedding_service = EmbeddingService()
         self.vector_store = VectorStore(dimension=settings.embedding_dimension)
         self._loaded = False
+        self._faq_cache: TTLCache[str, list[dict]] = TTLCache(maxsize=256, ttl=300)
 
     def _ensure_index_loaded(self) -> None:
         if self._loaded:
@@ -83,6 +85,11 @@ class RAGPipeline:
         if not keywords:
             return []
 
+        cache_key = "|".join(sorted(keywords))
+        cached = self._faq_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
         faqs = self.db.execute(
             select(FAQItem).where(FAQItem.status == "active")
         ).scalars().all()
@@ -95,7 +102,7 @@ class RAGPipeline:
                 scored.append((faq, overlap))
 
         scored.sort(key=lambda x: x[1], reverse=True)
-        return [
+        result = [
             {
                 "text": f"问：{faq.question}\n答：{faq.answer}",
                 "source": "faq",
@@ -104,6 +111,9 @@ class RAGPipeline:
             }
             for faq, count in scored[:3]
         ]
+
+        self._faq_cache[cache_key] = result
+        return result
 
     def build_context(self, chunks: list[dict]) -> str:
         parts = []

@@ -14,3 +14,4 @@ openai>=1.30.0
 faiss-cpu>=1.8.0
 jieba>=0.42.1
 edge-tts>=6.1.0
+cachetools>=5.5.0

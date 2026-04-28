@@ -47,3 +47,19 @@ app.include_router(route_templates_router, prefix=settings.api_prefix)
 app.include_router(sessions_router, prefix=settings.api_prefix)
 app.include_router(tourist_chat_router, prefix=settings.api_prefix)
 app.include_router(tourist_voice_router, prefix=settings.api_prefix)
+
+
+@app.on_event("startup")
+async def preload_vector_index():
+    """启动时预加载向量索引，避免首次请求延迟"""
+    try:
+        from app.core.database import SessionLocal
+        from app.services.rag_pipeline import RAGPipeline
+        db = SessionLocal()
+        try:
+            rag = RAGPipeline(db)
+            rag._ensure_index_loaded()
+        finally:
+            db.close()
+    except Exception:
+        pass  # 静默失败，不影响启动

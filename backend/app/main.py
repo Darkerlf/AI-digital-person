@@ -17,6 +17,7 @@ from app.api.routers.scenic_spots import router as scenic_spots_router
 from app.api.routers.sessions import router as sessions_router
 from app.api.routers.settings import router as settings_router
 from app.api.routers.tourist_chat import router as tourist_chat_router
+from app.api.routers.tourist_voice import router as tourist_voice_router
 from app.core.config import settings
 
 app = FastAPI(title=settings.app_name)
@@ -45,3 +46,4 @@ app.include_router(route_recommendations_router, prefix=settings.api_prefix)
 app.include_router(route_templates_router, prefix=settings.api_prefix)
 app.include_router(sessions_router, prefix=settings.api_prefix)
 app.include_router(tourist_chat_router, prefix=settings.api_prefix)
+app.include_router(tourist_voice_router, prefix=settings.api_prefix)

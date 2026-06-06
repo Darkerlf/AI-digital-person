@@ -4,6 +4,34 @@ import { describe, expect, it, vi } from 'vitest'
 
 import FaqView from '../views/FaqView.vue'
 
+const elementPlusStubs = {
+  'el-button': { template: '<button><slot /></button>' },
+  'el-card': { template: '<section><slot name="header" /><slot /></section>' },
+  'el-form': { template: '<form><slot /></form>' },
+  'el-form-item': { template: '<label><slot /></label>' },
+  'el-input': {
+    props: ['modelValue', 'placeholder', 'type'],
+    emits: ['update:modelValue'],
+    template:
+      '<textarea v-if="type === \'textarea\'" :placeholder="placeholder" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />' +
+      '<input v-else :placeholder="placeholder" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+  },
+  'el-input-number': {
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+    template: '<input type="number" :value="modelValue" @input="$emit(\'update:modelValue\', Number($event.target.value))" />',
+  },
+  'el-option': { template: '<option><slot /></option>' },
+  'el-select': {
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+    template: '<select :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><slot /></select>',
+  },
+  'el-table': { template: '<div><slot /></div>' },
+  'el-table-column': { template: '<div><slot :row="{}" /></div>' },
+  'el-tag': { template: '<span><slot /></span>' },
+}
+
 const { postMock, routeMock } = vi.hoisted(() => ({
   postMock: vi.fn(async (_path: string, _payload?: unknown) => ({ data: { id: 10 } })),
   routeMock: {
@@ -38,7 +66,7 @@ vi.mock('../api/client', () => ({
 
 describe('FaqView', () => {
   it('prefills the FAQ form from correction task query params', async () => {
-    const wrapper = mount(FaqView)
+    const wrapper = mount(FaqView, { global: { stubs: elementPlusStubs } })
     await Promise.resolve()
     await nextTick()
 
@@ -48,7 +76,7 @@ describe('FaqView', () => {
 
   it('submits correction_task_id when creating a FAQ from a task', async () => {
     postMock.mockClear()
-    const wrapper = mount(FaqView)
+    const wrapper = mount(FaqView, { global: { stubs: elementPlusStubs } })
     await Promise.resolve()
     await nextTick()
 

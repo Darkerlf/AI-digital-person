@@ -12,10 +12,10 @@ router = APIRouter(prefix="/route-templates", tags=["route-templates"])
 @router.post("", response_model=RouteTemplateRead, status_code=status.HTTP_201_CREATED)
 def create_template(
     payload: RouteTemplateCreate,
-    _: object = Depends(require_content_roles),
+    current_user=Depends(require_content_roles),
     db: Session = Depends(get_db),
 ):
-    return RouteTemplateService(db).create(payload)
+    return RouteTemplateService(db).create(payload, current_user=current_user)
 
 
 @router.get("")
@@ -36,17 +36,17 @@ def get_template(
 def update_template(
     template_id: int,
     payload: RouteTemplateUpdate,
-    _: object = Depends(require_content_roles),
+    current_user=Depends(require_content_roles),
     db: Session = Depends(get_db),
 ):
-    return RouteTemplateService(db).update(template_id, payload)
+    return RouteTemplateService(db).update(template_id, payload, current_user=current_user)
 
 
 @router.delete("/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_template(
     template_id: int,
-    _: object = Depends(require_content_roles),
+    current_user=Depends(require_content_roles),
     db: Session = Depends(get_db),
 ):
-    RouteTemplateService(db).delete(template_id)
+    RouteTemplateService(db).delete(template_id, current_user=current_user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

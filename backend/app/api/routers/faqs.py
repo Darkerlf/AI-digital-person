@@ -28,13 +28,13 @@ def create_faq(
 def update_faq(
     faq_id: int,
     payload: FAQUpdate,
-    _: object = Depends(require_content_roles),
+    current_user=Depends(require_content_roles),
     db: Session = Depends(get_db),
 ):
-    return KnowledgeService(db).update_faq(faq_id, payload)
+    return KnowledgeService(db).update_faq(faq_id, payload, current_user=current_user)
 
 
 @router.delete("/{faq_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_faq(faq_id: int, _: object = Depends(require_content_roles), db: Session = Depends(get_db)):
-    KnowledgeService(db).delete_faq(faq_id)
+def delete_faq(faq_id: int, current_user=Depends(require_content_roles), db: Session = Depends(get_db)):
+    KnowledgeService(db).delete_faq(faq_id, current_user=current_user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

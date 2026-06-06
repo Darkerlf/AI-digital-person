@@ -9,6 +9,15 @@ class KnowledgeDocumentCreate(BaseModel):
     content_text: str
 
 
+class KnowledgeDocumentUpdate(BaseModel):
+    scenic_area_id: int | None = None
+    title: str | None = None
+    doc_type: str | None = None
+    source_name: str | None = None
+    content_text: str | None = None
+    status: str | None = None
+
+
 class KnowledgeDocumentRead(BaseModel):
     id: int
     scenic_area_id: int

@@ -6,11 +6,12 @@ from sqlalchemy.orm import Session
 from app.importers.knowledge_doc_importer import KnowledgeDocImporter
 from app.importers.scenic_docx_importer import ScenicDocxImporter
 from app.models.import_job import ImportJob
+from app.models.scenic_spot import ScenicSpot
 from app.repositories.import_repo import ImportRepository
 from app.repositories.scenic_area_repo import ScenicAreaRepository
 from app.services.knowledge_service import KnowledgeService
 from app.services.scenic_spot_service import ScenicSpotService
-from app.utils.file_storage import save_upload
+from app.utils.file_storage import store_upload
 
 PENDING = "pending"
 PROCESSING = "processing"
@@ -25,12 +26,12 @@ class ImportService:
         self.repo = ImportRepository(db)
         self.area_repo = ScenicAreaRepository(db)
 
-    def _create_job(self, job_type: str, source_path: Path) -> ImportJob:
-        stored_path = save_upload(source_path)
+    def _create_job(self, job_type: str, source_path: Path, source_file_name: str | None = None) -> ImportJob:
+        stored_path = store_upload(source_path, prefix=f"imports/{job_type}")
         job = self.repo.create_job(
             job_type=job_type,
-            source_file_name=source_path.name,
-            source_file_path=str(stored_path),
+            source_file_name=source_file_name or source_path.name,
+            source_file_path=stored_path,
             status=PENDING,
             total_count=0,
             success_count=0,
@@ -44,11 +45,11 @@ class ImportService:
         self.db.refresh(job)
         return job
 
-    def run_scenic_import(self, source_path: str):
+    def run_scenic_import(self, source_path: str, source_file_name: str | None = None):
         path = Path(source_path)
         if not path.exists():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Source file not found")
-        job = self._create_job("scenic_spot", path)
+        job = self._create_job("scenic_spot", path, source_file_name)
         job.status = PROCESSING
         importer = ScenicDocxImporter()
         rows = importer.parse(path)
@@ -57,23 +58,40 @@ class ImportService:
             area = next((item for item in self.area_repo.list_all() if item.name == row["scenic_area_name"]), None)
             if area is None:
                 area = self.area_repo.create(code=row["scenic_area_name"], name=row["scenic_area_name"], description=None, status="active")
-            spot = spot_service.create(
-                type(
-                    "Payload",
-                    (),
-                    {
-                        "model_dump": lambda self, row=row, area=area: {
-                            "scenic_area_id": area.id,
-                            "spot_code": row["spot_code"],
-                            "name": row["name"],
-                            "alias": None,
-                            "location_text": row["location_text"],
-                            "open_status": "open",
-                            "tags": [],
-                        }
-                    },
-                )()
-            )
+            spot_payload = {
+                "scenic_area_id": area.id,
+                "spot_code": row["spot_code"],
+                "name": row["name"],
+                "alias": None,
+                "location_text": row.get("location_text"),
+                "parameters_text": row.get("parameters_text"),
+                "core_function": row.get("core_function"),
+                "cultural_value": row.get("cultural_value"),
+                "detail_intro": row.get("detail_intro"),
+                "highlights": row.get("highlights"),
+                "performance_info": row.get("performance_info"),
+                "remarks": row.get("remarks"),
+                "open_status": "open",
+                "tags": [],
+            }
+            existing = self.db.query(ScenicSpot).filter(ScenicSpot.spot_code == row["spot_code"]).first()
+            if existing:
+                for key, value in spot_payload.items():
+                    if key != "tags":
+                        setattr(existing, key, value)
+                self.db.commit()
+                self.db.refresh(existing)
+                spot = spot_service._to_read_dict(existing)
+            else:
+                spot = spot_service.create(
+                    type(
+                        "Payload",
+                        (),
+                        {
+                            "model_dump": lambda self, spot_payload=spot_payload: spot_payload
+                        },
+                    )()
+                )
             self.repo.create_job_item(
                 import_job_id=job.id,
                 item_type="scenic_spot",
@@ -91,13 +109,17 @@ class ImportService:
         self.db.refresh(job)
         return job
 
-    def run_knowledge_import(self, source_path: str, scenic_area_id: int):
+    def run_knowledge_import(self, source_path: str, scenic_area_id: int, source_file_name: str | None = None):
         path = Path(source_path)
         if not path.exists():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Source file not found")
-        job = self._create_job("knowledge_document", path)
+        job = self._create_job("knowledge_document", path, source_file_name)
         job.status = PROCESSING
         payload = KnowledgeDocImporter().parse(path)
+        if source_file_name:
+            original_path = Path(source_file_name)
+            payload["title"] = original_path.stem
+            payload["source_name"] = original_path.name
         document = KnowledgeService(self.db).create_document(
             type(
                 "Payload",

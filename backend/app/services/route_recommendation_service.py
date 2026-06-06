@@ -1,12 +1,14 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.models.route_recommendation_record import RouteRecommendationRecord
 from app.repositories.route_template_repo import RouteTemplateRepository
 from app.schemas.route_template import RouteRecommendationRequest
 
 
 class RouteRecommendationService:
     def __init__(self, db: Session) -> None:
+        self.db = db
         self.repo = RouteTemplateRepository(db)
 
     def generate(self, payload: RouteRecommendationRequest) -> dict:
@@ -28,7 +30,7 @@ class RouteRecommendationService:
 
         winner = scored_candidates[0]
         template = winner["template"]
-        return {
+        result = {
             "matched_template": {
                 "id": template.id,
                 "name": template.name,
@@ -49,6 +51,24 @@ class RouteRecommendationService:
                 for item in sorted(template.spots, key=lambda value: value.sort_order)
             ],
         }
+        self._record_generation(payload, result)
+        return result
+
+    def _record_generation(self, payload: RouteRecommendationRequest, result: dict) -> None:
+        matched_template = result["matched_template"]
+        self.db.add(
+            RouteRecommendationRecord(
+                scenic_area_id=payload.scenic_area_id,
+                source=matched_template["template_type"],
+                duration_minutes=payload.duration_minutes,
+                matched_template_id=matched_template["id"] or None,
+                matched_template_name=matched_template["name"],
+                fallback_used=result["fallback_used"],
+                request_json=payload.model_dump(),
+                response_json=result,
+            )
+        )
+        self.db.commit()
 
     def _score_candidate(self, template, payload: RouteRecommendationRequest) -> dict:
         interest_overlap = len(set(payload.interest_tags).intersection(self._load_tags(template.interest_tags_json)))

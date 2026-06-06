@@ -11,12 +11,22 @@ class KnowledgeCorrectionRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def list_tasks(self) -> list[KnowledgeCorrectionTask]:
-        return (
-            self.db.execute(select(KnowledgeCorrectionTask).order_by(KnowledgeCorrectionTask.id.desc()))
-            .scalars()
-            .all()
-        )
+    def list_tasks(
+        self,
+        *,
+        status: str | None = None,
+        correction_type: str | None = None,
+        scenic_area_id: int | None = None,
+    ) -> list[KnowledgeCorrectionTask]:
+        statement = select(KnowledgeCorrectionTask)
+        if status:
+            statement = statement.where(KnowledgeCorrectionTask.status == status)
+        if correction_type:
+            statement = statement.where(KnowledgeCorrectionTask.correction_type == correction_type)
+        if scenic_area_id is not None:
+            statement = statement.where(KnowledgeCorrectionTask.scenic_area_id == scenic_area_id)
+        statement = statement.order_by(KnowledgeCorrectionTask.id.desc())
+        return self.db.execute(statement).scalars().all()
 
     def get(self, task_id: int) -> KnowledgeCorrectionTask | None:
         return self.db.get(KnowledgeCorrectionTask, task_id)

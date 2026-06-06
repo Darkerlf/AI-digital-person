@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import AdminLayout from '../layouts/AdminLayout.vue'
+import AdminUserView from '../views/AdminUserView.vue'
 import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import DigitalHumanView from '../views/DigitalHumanView.vue'
@@ -16,6 +17,7 @@ import RouteTemplateView from '../views/RouteTemplateView.vue'
 import ScenicAreaView from '../views/ScenicAreaView.vue'
 import ScenicSpotDetailView from '../views/ScenicSpotDetailView.vue'
 import ScenicSpotListView from '../views/ScenicSpotListView.vue'
+import ServicePoiView from '../views/ServicePoiView.vue'
 import SessionManagementView from '../views/SessionManagementView.vue'
 import SettingsAiProviderView from '../views/SettingsAiProviderView.vue'
 import { getDefaultRouteByRole, useAuthStore } from '../stores/auth'
@@ -70,6 +72,15 @@ export const router = createRouter({
           meta: {
             title: '景点详情',
             description: '更新景点基础信息与开放状态。',
+            roles: ['super_admin', 'content_admin'],
+          },
+        },
+        {
+          path: 'service-pois',
+          component: ServicePoiView,
+          meta: {
+            title: '便民服务点',
+            description: '维护厕所、游客中心、餐饮、停车等服务点坐标。',
             roles: ['super_admin', 'content_admin'],
           },
         },
@@ -169,6 +180,15 @@ export const router = createRouter({
           meta: {
             title: 'AI 配置',
             description: '维护模型提供商配置。',
+            roles: ['super_admin'],
+          },
+        },
+        {
+          path: 'settings/admin-users',
+          component: AdminUserView,
+          meta: {
+            title: '账号管理',
+            description: '管理后台账号、角色、状态和密码。',
             roles: ['super_admin'],
           },
         },

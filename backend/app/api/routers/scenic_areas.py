@@ -12,10 +12,10 @@ router = APIRouter(prefix="/scenic-areas", tags=["scenic-areas"])
 @router.post("", response_model=ScenicAreaRead, status_code=status.HTTP_201_CREATED)
 def create_area(
     payload: ScenicAreaCreate,
-    _: object = Depends(require_content_roles),
+    current_user=Depends(require_content_roles),
     db: Session = Depends(get_db),
 ):
-    return ScenicAreaService(db).create(payload)
+    return ScenicAreaService(db).create(payload, current_user=current_user)
 
 
 @router.get("", response_model=list[ScenicAreaRead])
@@ -32,13 +32,13 @@ def get_area(area_id: int, _: object = Depends(require_content_roles), db: Sessi
 def update_area(
     area_id: int,
     payload: ScenicAreaUpdate,
-    _: object = Depends(require_content_roles),
+    current_user=Depends(require_content_roles),
     db: Session = Depends(get_db),
 ):
-    return ScenicAreaService(db).update(area_id, payload)
+    return ScenicAreaService(db).update(area_id, payload, current_user=current_user)
 
 
 @router.delete("/{area_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_area(area_id: int, _: object = Depends(require_content_roles), db: Session = Depends(get_db)):
-    ScenicAreaService(db).delete(area_id)
+def delete_area(area_id: int, current_user=Depends(require_content_roles), db: Session = Depends(get_db)):
+    ScenicAreaService(db).delete(area_id, current_user=current_user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

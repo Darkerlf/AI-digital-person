@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.models.admin_user import AdminUser
@@ -38,6 +38,20 @@ class SettingsRepository:
     def get_digital_human(self, config_id: int) -> DigitalHumanConfig | None:
         return self.db.get(DigitalHumanConfig, config_id)
 
+    def get_active_digital_human(self, scenic_area_id: int | None = None) -> DigitalHumanConfig | None:
+        statement = select(DigitalHumanConfig).where(DigitalHumanConfig.status == "active")
+        if scenic_area_id is not None:
+            statement = statement.where(
+                or_(
+                    DigitalHumanConfig.scenic_area_id == scenic_area_id,
+                    DigitalHumanConfig.scenic_area_id.is_(None),
+                )
+            )
+            statement = statement.order_by(DigitalHumanConfig.scenic_area_id.is_(None).asc(), DigitalHumanConfig.id.asc())
+        else:
+            statement = statement.order_by(DigitalHumanConfig.scenic_area_id.is_not(None).asc(), DigitalHumanConfig.id.asc())
+        return self.db.execute(statement).scalars().first()
+
     def create_digital_human(self, **kwargs) -> DigitalHumanConfig:
         item = DigitalHumanConfig(**kwargs)
         self.db.add(item)
@@ -47,6 +61,9 @@ class SettingsRepository:
 
     def list_admin_users(self) -> list[AdminUser]:
         return self.db.execute(select(AdminUser).order_by(AdminUser.id.asc())).scalars().all()
+
+    def get_admin_user(self, user_id: int) -> AdminUser | None:
+        return self.db.get(AdminUser, user_id)
 
     def create_admin_user(self, **kwargs) -> AdminUser:
         user = AdminUser(**kwargs)

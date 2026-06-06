@@ -13,9 +13,45 @@
       }
     },
     {
+      "path": "pages/avatar/avatar",
+      "style": {
+        "navigationBarTitleText": "高拟真数字人"
+      }
+    },
+    {
       "path": "pages/map/map",
       "style": {
         "navigationBarTitleText": "地图导览"
+      }
+    },
+    {
+      "path": "pages/spot/spot",
+      "style": {
+        "navigationBarTitleText": "景点讲解"
+      }
+    },
+    {
+      "path": "pages/route/route",
+      "style": {
+        "navigationBarTitleText": "路线推荐"
+      }
+    },
+    {
+      "path": "pages/route-guide/route-guide",
+      "style": {
+        "navigationBarTitleText": "步行导览"
+      }
+    },
+    {
+      "path": "pages/services/services",
+      "style": {
+        "navigationBarTitleText": "便民服务"
+      }
+    },
+    {
+      "path": "pages/feedback/feedback",
+      "style": {
+        "navigationBarTitleText": "游客反馈"
       }
     },
     {
@@ -28,12 +64,12 @@
   "globalStyle": {
     "navigationBarTextStyle": "white",
     "navigationBarTitleText": "灵山胜境",
-    "navigationBarBackgroundColor": "#1a73e8",
-    "backgroundColor": "#f5f5f5"
+    "navigationBarBackgroundColor": "#238fa3",
+    "backgroundColor": "#f7fdfb"
   },
   "tabBar": {
-    "color": "#999999",
-    "selectedColor": "#1a73e8",
+    "color": "#7a8a91",
+    "selectedColor": "#238fa3",
     "borderStyle": "white",
     "backgroundColor": "#ffffff",
     "list": [

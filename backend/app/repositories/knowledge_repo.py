@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.models.faq_item import FAQItem
@@ -27,6 +27,9 @@ class KnowledgeRepository:
             .where(KnowledgeChunk.document_id == document_id)
             .order_by(KnowledgeChunk.chunk_index.asc())
         ).scalars().all()
+
+    def delete_chunks(self, document_id: int) -> None:
+        self.db.execute(delete(KnowledgeChunk).where(KnowledgeChunk.document_id == document_id))
 
     def list_documents(self) -> list[KnowledgeDocument]:
         return self.db.execute(select(KnowledgeDocument).order_by(KnowledgeDocument.id.asc())).scalars().all()

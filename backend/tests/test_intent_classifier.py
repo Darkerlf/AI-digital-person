@@ -1,3 +1,4 @@
+import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -11,6 +12,46 @@ def classifier():
 
 
 class TestIntentClassifier:
+    def test_rule_based_ticket_question_skips_llm(self):
+        classifier = IntentClassifier()
+        mock_generate = AsyncMock(return_value="route_recommend")
+
+        with patch.object(classifier.llm_client, "generate_text", mock_generate):
+            intent = asyncio.run(classifier.classify("\u95e8\u7968\u591a\u5c11\u94b1"))
+
+        assert intent == Intent.SCENIC_QA
+        mock_generate.assert_not_awaited()
+
+    def test_rule_based_route_question_skips_llm(self):
+        classifier = IntentClassifier()
+        mock_generate = AsyncMock(return_value="scenic_qa")
+
+        with patch.object(classifier.llm_client, "generate_text", mock_generate):
+            intent = asyncio.run(classifier.classify("\u63a8\u8350\u6e38\u89c8\u8def\u7ebf"))
+
+        assert intent == Intent.ROUTE_RECOMMEND
+        mock_generate.assert_not_awaited()
+
+    def test_rule_based_service_question_skips_llm(self):
+        classifier = IntentClassifier()
+        mock_generate = AsyncMock(return_value="scenic_qa")
+
+        with patch.object(classifier.llm_client, "generate_text", mock_generate):
+            intent = asyncio.run(classifier.classify("\u9644\u8fd1\u6709\u5395\u6240\u5417"))
+
+        assert intent == Intent.SERVICE_QUERY
+        mock_generate.assert_not_awaited()
+
+    def test_rule_based_greeting_skips_llm(self):
+        classifier = IntentClassifier()
+        mock_generate = AsyncMock(return_value="scenic_qa")
+
+        with patch.object(classifier.llm_client, "generate_text", mock_generate):
+            intent = asyncio.run(classifier.classify("\u4f60\u597d"))
+
+        assert intent == Intent.CHITCHAT
+        mock_generate.assert_not_awaited()
+
     @pytest.mark.asyncio
     async def test_classify_scenic_qa(self, classifier):
         with patch.object(classifier.llm_client, "generate_text", new_callable=AsyncMock, return_value="scenic_qa"):

@@ -15,6 +15,11 @@ def list_digital_humans(_: object = Depends(require_content_roles), db: Session 
     return {"items": DigitalHumanService(db).list_all()}
 
 
+@router.get("/active")
+def get_active_digital_human(scenic_area_id: int | None = None, db: Session = Depends(get_db)):
+    return DigitalHumanService(db).get_active(scenic_area_id)
+
+
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_digital_human(
     payload: DigitalHumanCreate,

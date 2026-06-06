@@ -1,4 +1,4 @@
-from sqlalchemy import Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -13,8 +13,17 @@ class ScenicSpot(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(120), index=True)
     alias: Mapped[str | None] = mapped_column(String(255), nullable=True)
     location_text: Mapped[str | None] = mapped_column(Text, nullable=True)
-    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
-    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    latitude: Mapped[float | None] = mapped_column(Float(precision=53), nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float(precision=53), nullable=True)
+    coordinate_source: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    coordinate_confidence: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    coordinate_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    tencent_poi_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    coordinate_address: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    coordinate_raw_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cover_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    guide_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    target_audience: Mapped[str | None] = mapped_column(String(255), nullable=True)
     parameters_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     core_function: Mapped[str | None] = mapped_column(Text, nullable=True)
     cultural_value: Mapped[str | None] = mapped_column(Text, nullable=True)

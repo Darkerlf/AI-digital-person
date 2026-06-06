@@ -15,7 +15,7 @@
         </select>
       </div>
       <ul class="page-shell__list">
-        <li v-for="item in filteredTasks" :key="item.id">
+        <li v-for="item in tasks" :key="item.id">
           <div>
             <strong>{{ item.question_text }}</strong>
             <p>{{ item.correction_type }} · {{ item.status }}</p>
@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 
 import { apiClient } from '../api/client'
 
@@ -46,24 +46,25 @@ const tasks = ref<CorrectionTask[]>([])
 const statusFilter = ref('')
 const typeFilter = ref('')
 
-const filteredTasks = computed(() => {
-  return tasks.value.filter((item) => {
-    if (statusFilter.value && item.status !== statusFilter.value) {
-      return false
-    }
-    if (typeFilter.value && item.correction_type !== typeFilter.value) {
-      return false
-    }
-    return true
-  })
-})
-
 async function loadTasks() {
-  const response = await apiClient.get('/knowledge/correction-tasks')
+  const params: Record<string, string> = {}
+  if (statusFilter.value) {
+    params.status = statusFilter.value
+  }
+  if (typeFilter.value) {
+    params.correction_type = typeFilter.value
+  }
+  const response = Object.keys(params).length
+    ? await apiClient.get('/knowledge/correction-tasks', { params })
+    : await apiClient.get('/knowledge/correction-tasks')
   tasks.value = response.data.items
 }
 
 onMounted(() => {
+  void loadTasks()
+})
+
+watch([statusFilter, typeFilter], () => {
   void loadTasks()
 })
 </script>

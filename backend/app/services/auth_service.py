@@ -11,6 +11,6 @@ class AuthService:
 
     def login(self, username: str, password: str) -> str | None:
         user = self.admin_users.get_by_username(username)
-        if user is None or not verify_password(password, user.password_hash):
+        if user is None or user.status != "active" or not verify_password(password, user.password_hash):
             return None
         return create_access_token(user.username)

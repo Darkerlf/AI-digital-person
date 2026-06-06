@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_content_roles
@@ -19,8 +19,20 @@ def create_correction_task(
 
 
 @router.get("")
-def list_correction_tasks(current_user=Depends(require_content_roles), db: Session = Depends(get_db)):
-    return {"items": KnowledgeCorrectionService(db).list_tasks()}
+def list_correction_tasks(
+    status: str | None = Query(default=None),
+    correction_type: str | None = Query(default=None),
+    scenic_area_id: int | None = Query(default=None),
+    current_user=Depends(require_content_roles),
+    db: Session = Depends(get_db),
+):
+    return {
+        "items": KnowledgeCorrectionService(db).list_tasks(
+            status=status,
+            correction_type=correction_type,
+            scenic_area_id=scenic_area_id,
+        )
+    }
 
 
 @router.get("/{task_id}", response_model=KnowledgeCorrectionTaskRead)

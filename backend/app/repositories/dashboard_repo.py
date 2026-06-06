@@ -36,11 +36,11 @@ class DashboardRepository:
             stat = DashboardStatDaily(stat_date=stat_date, scenic_area_id=None)
             self.db.add(stat)
         stat.total_events = int(payload.get("total_events", 0))
-        stat.total_visitors = int(payload.get("total_events", 0))
+        stat.total_visitors = int(payload.get("total_visitors", 0))
         stat.hot_spot_top_json = payload.get("hot_spot_top")
-        stat.hot_question_top_json = []
-        stat.route_usage_json = []
-        stat.satisfaction_score = None
+        stat.hot_question_top_json = payload.get("hot_question_top")
+        stat.route_usage_json = payload.get("route_usage")
+        stat.satisfaction_score = payload.get("satisfaction_score")  # type: ignore[assignment]
         self.db.commit()
         self.db.refresh(stat)
         return stat

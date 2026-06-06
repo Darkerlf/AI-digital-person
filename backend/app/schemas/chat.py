@@ -1,10 +1,13 @@
-from pydantic import BaseModel
+from typing import Literal
+
+from pydantic import BaseModel, Field
 
 
 class ChatRequest(BaseModel):
     session_id: int | None = None
     message: str
     scenic_area_id: int | None = None
+    visitor_id: str | None = None
 
 
 class ChatResponse(BaseModel):
@@ -37,3 +40,17 @@ class ConversationTurnOut(BaseModel):
     created_at: str
 
     model_config = {"from_attributes": True}
+
+
+class FeedbackRequest(BaseModel):
+    session_id: int | None = None
+    message_id: int | None = None
+    sentiment: Literal["positive", "neutral", "negative"]
+    score: float | None = Field(default=None, ge=1, le=5)
+    content: str | None = None
+    scenic_area_id: int | None = None
+
+
+class FeedbackResponse(BaseModel):
+    id: int
+    status: str = "ok"

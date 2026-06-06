@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.repositories.conversation_repo import ConversationRepository
 from app.repositories.knowledge_correction_repo import KnowledgeCorrectionRepository
 from app.schemas.knowledge_correction import KnowledgeCorrectionTaskCreate
+from app.services.operation_log_service import record_operation_log
 
 
 class KnowledgeCorrectionService:
@@ -32,8 +33,21 @@ class KnowledgeCorrectionService:
             "updated_at": task.updated_at,
         }
 
-    def list_tasks(self) -> list[dict]:
-        return [self._to_read_dict(task) for task in self.repo.list_tasks()]
+    def list_tasks(
+        self,
+        *,
+        status: str | None = None,
+        correction_type: str | None = None,
+        scenic_area_id: int | None = None,
+    ) -> list[dict]:
+        return [
+            self._to_read_dict(task)
+            for task in self.repo.list_tasks(
+                status=status,
+                correction_type=correction_type,
+                scenic_area_id=scenic_area_id,
+            )
+        ]
 
     def get_task(self, task_id: int) -> dict:
         task = self.repo.get(task_id)
@@ -56,6 +70,15 @@ class KnowledgeCorrectionService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
         task = self.repo.create_from_message(message=message, session=session, payload=payload, created_by=current_user.id)
+        record_operation_log(
+            self.db,
+            module="knowledge_correction",
+            action="create",
+            target_type="knowledge_correction_task",
+            target_id=task.id,
+            detail={"correction_type": task.correction_type, "source_message_id": task.source_message_id},
+            current_user=current_user,
+        )
         return self._to_read_dict(task)
 
     def link_faq_and_resolve(self, correction_task_id: int, faq_id: int, current_user) -> dict:
@@ -67,7 +90,7 @@ class KnowledgeCorrectionService:
 
         task.linked_faq_id = faq_id
         task.linked_document_id = None
-        return self._resolve_task(task, current_user.id)
+        return self._resolve_task(task, current_user=current_user)
 
     def link_document_and_resolve(self, correction_task_id: int, document_id: int, current_user) -> dict:
         task = self.repo.get(correction_task_id)
@@ -78,9 +101,9 @@ class KnowledgeCorrectionService:
 
         task.linked_document_id = document_id
         task.linked_faq_id = None
-        return self._resolve_task(task, current_user.id)
+        return self._resolve_task(task, current_user=current_user)
 
-    def _resolve_task(self, task, resolved_by: int | None) -> dict:
+    def _resolve_task(self, task, current_user=None) -> dict:
         if task.linked_faq_id is None and task.linked_document_id is None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Correction task has no linked result")
 
@@ -89,10 +112,19 @@ class KnowledgeCorrectionService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation message not found")
 
         task.status = "resolved"
-        task.resolved_by = resolved_by
+        task.resolved_by = getattr(current_user, "id", None)
         message.resolution_status = "resolved"
         if task.resolution_note:
             message.resolution_note = task.resolution_note
         self.db.commit()
         self.db.refresh(task)
+        record_operation_log(
+            self.db,
+            module="knowledge_correction",
+            action="resolve",
+            target_type="knowledge_correction_task",
+            target_id=task.id,
+            detail={"linked_faq_id": task.linked_faq_id, "linked_document_id": task.linked_document_id},
+            current_user=current_user,
+        )
         return self._to_read_dict(task)

@@ -4,8 +4,32 @@ import { describe, expect, it, vi } from 'vitest'
 
 import KnowledgeDocumentView from '../views/KnowledgeDocumentView.vue'
 
-const { postMock, routeMock } = vi.hoisted(() => ({
+const elementPlusStubs = {
+  'el-button': { template: '<button><slot /></button>' },
+  'el-card': { template: '<section><slot name="header" /><slot /></section>' },
+  'el-form': { template: '<form><slot /></form>' },
+  'el-form-item': { template: '<label><slot /></label>' },
+  'el-input': {
+    props: ['modelValue', 'placeholder', 'type'],
+    emits: ['update:modelValue'],
+    template:
+      '<textarea v-if="type === \'textarea\'" :placeholder="placeholder" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />' +
+      '<input v-else :placeholder="placeholder" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+  },
+  'el-option': { template: '<option><slot /></option>' },
+  'el-select': {
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+    template: '<select :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><slot /></select>',
+  },
+  'el-table': { template: '<div><slot /></div>' },
+  'el-table-column': { template: '<div><slot :row="{}" /></div>' },
+}
+
+const { deleteMock, postMock, putMock, routeMock } = vi.hoisted(() => ({
+  deleteMock: vi.fn(async (_path: string) => ({ data: {} })),
   postMock: vi.fn(async (_path: string, _payload?: unknown) => ({ data: { id: 20 } })),
+  putMock: vi.fn(async (_path: string, _payload?: unknown) => ({ data: {} })),
   routeMock: {
     query: {
       taskId: '9',
@@ -27,20 +51,34 @@ vi.mock('../api/client', () => ({
   apiClient: {
     get: vi.fn(async (path: string) => {
       if (path === '/knowledge/documents') {
-        return { data: [] }
+        return {
+          data: [
+            {
+              id: 12,
+              scenic_area_id: 1,
+              title: 'Route Guide',
+              doc_type: 'markdown',
+              source_name: 'manual',
+              content_text: 'Existing route guide',
+              status: 'active',
+            },
+          ],
+        }
       }
       if (path === '/scenic-areas') {
         return { data: [{ id: 1, name: '灵山胜境' }] }
       }
       return { data: {} }
     }),
+    delete: deleteMock,
     post: postMock,
+    put: putMock,
   },
 }))
 
 describe('KnowledgeDocumentView', () => {
   it('prefills the knowledge document form from correction task query params', async () => {
-    const wrapper = mount(KnowledgeDocumentView)
+    const wrapper = mount(KnowledgeDocumentView, { global: { stubs: elementPlusStubs } })
     await Promise.resolve()
     await nextTick()
 
@@ -54,7 +92,7 @@ describe('KnowledgeDocumentView', () => {
 
   it('submits correction_task_id when creating a knowledge document from a task', async () => {
     postMock.mockClear()
-    const wrapper = mount(KnowledgeDocumentView)
+    const wrapper = mount(KnowledgeDocumentView, { global: { stubs: elementPlusStubs } })
     await Promise.resolve()
     await nextTick()
 
@@ -64,5 +102,42 @@ describe('KnowledgeDocumentView', () => {
 
     expect(postMock).toHaveBeenCalled()
     expect(String(postMock.mock.calls[0][0])).toContain('correction_task_id=9')
+  })
+
+  it('updates, disables, and deletes existing knowledge documents', async () => {
+    putMock.mockClear()
+    deleteMock.mockClear()
+    const wrapper = mount(KnowledgeDocumentView, { global: { stubs: elementPlusStubs } })
+    await Promise.resolve()
+    await nextTick()
+
+    const viewModel = wrapper.vm as unknown as {
+      startEdit: (item: unknown) => void
+      toggleDocumentStatus: (item: { id: number; status: string }) => Promise<void>
+      deleteDocument: (item: { id: number }) => Promise<void>
+    }
+    viewModel.startEdit({
+      id: 12,
+      scenic_area_id: 1,
+      title: 'Route Guide',
+      doc_type: 'markdown',
+      source_name: 'manual',
+      content_text: 'Existing route guide',
+      status: 'active',
+    })
+    await nextTick()
+    await wrapper.find('input[placeholder="文档标题"]').setValue('Updated Route Guide')
+    await wrapper.find('form').trigger('submit.prevent')
+    await Promise.resolve()
+
+    expect(putMock).toHaveBeenCalledWith('/knowledge/documents/12', expect.objectContaining({
+      title: 'Updated Route Guide',
+    }))
+
+    await viewModel.toggleDocumentStatus({ id: 12, status: 'active' })
+    expect(putMock).toHaveBeenCalledWith('/knowledge/documents/12', { status: 'inactive' })
+
+    await viewModel.deleteDocument({ id: 12 })
+    expect(deleteMock).toHaveBeenCalledWith('/knowledge/documents/12')
   })
 })

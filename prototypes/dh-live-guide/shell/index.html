@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>灵山胜境 AI 导游</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="../src/styles.css?v=live-guide-7">
+  </head>
+  <body>
+    <main class="guide-layout stage-first-layout">
+      <section class="avatar-surface" aria-label="动态数字人">
+        <div id="avatar-stage" class="avatar-stage" data-avatar-mode="idle">
+          <figure id="loadingSpinner"><strong>动态人物加载中...</strong></figure>
+          <video id="background_video" src="background/bg.mp4" autoplay loop muted playsinline></video>
+          <img id="avatar-idle-still" src="assets/idle-open-cover.png" alt="" aria-hidden="true">
+          <canvas id="canvas_video"></canvas>
+          <canvas id="avatar-idle-frame" aria-hidden="true"></canvas>
+          <canvas id="canvas_gl" width="184" height="184"></canvas>
+          <canvas id="canvasEl"></canvas>
+          <div id="screen" aria-hidden="true"></div>
+          <div id="screen2" aria-hidden="true"></div>
+          <div id="startMessage" aria-hidden="true">加载中</div>
+          <select id="characterDropdown" aria-hidden="true" tabindex="-1">
+            <option value="assets">default</option>
+          </select>
+        </div>
+        <span id="avatar-status" class="status-pill">加载中</span>
+        <div class="stage-actions">
+          <button type="button" class="stage-action" data-stage-action="sound" aria-label="关闭声音" title="关闭声音">声</button>
+          <button type="button" class="stage-action" data-stage-action="fullscreen" aria-label="全屏查看" title="全屏查看">全</button>
+        </div>
+      </section>
+
+      <section class="conversation-surface guide-panel">
+        <div class="panel-heading">
+          <h1>想了解景点和路线，直接问我</h1>
+          <p class="hint">数字人会根据回答内容生成讲解语音，并驱动口型与表情状态。</p>
+        </div>
+
+        <div class="quick-row" aria-label="快捷问题">
+          <button type="button" data-question="请介绍一下灵山大佛。">灵山大佛</button>
+          <button type="button" data-question="门票多少钱？">门票价格</button>
+          <button type="button" data-question="推荐一条半日游路线。">半日路线</button>
+        </div>
+
+        <div class="panel-transcript">
+          <div id="messages" class="messages" aria-live="polite">
+            <article class="message assistant welcome-message">
+              <span class="message-speaker" aria-hidden="true">声</span>
+              <p>灵山胜境位于无锡马山，是以灵山大佛为核心的国家 5A 级旅游景区，集自然风光与佛教文化于一体。我可以为您介绍景点、路线、门票与服务。</p>
+            </article>
+          </div>
+        </div>
+
+        <form id="guide-form" class="prompt-bar prompt-card">
+          <div id="text-prompt-mode" class="prompt-text-mode">
+            <button id="voice-mode-toggle" class="prompt-icon prompt-mic" type="button" aria-label="切换到语音输入" title="语音输入">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 14.5a3.5 3.5 0 0 0 3.5-3.5V6a3.5 3.5 0 1 0-7 0v5a3.5 3.5 0 0 0 3.5 3.5Z"></path>
+                <path d="M5.5 10.5v.5a6.5 6.5 0 0 0 13 0v-.5M12 17.5V21M9 21h6"></path>
+              </svg>
+            </button>
+            <input id="question" value="" aria-label="请输入问题" placeholder="请输入想了解的问题...">
+            <button id="send" type="submit">输入</button>
+          </div>
+          <div id="voice-prompt-mode" class="prompt-voice-mode" hidden>
+            <button id="text-mode-toggle" class="prompt-icon prompt-keyboard" type="button" aria-label="返回文字输入" title="文字输入">键</button>
+            <button id="hold-to-talk" class="hold-to-talk" type="button">按住说话</button>
+          </div>
+        </form>
+
+        <dl class="metrics">
+          <div><dt>状态</dt><dd id="metric-state">等待加载</dd></div>
+          <div><dt>首段开口延迟</dt><dd id="metric-latency">--</dd></div>
+        </dl>
+      </section>
+    </main>
+
+    <template id="assistant-message-template">
+      <article class="message assistant">
+        <span class="message-speaker" aria-hidden="true">声</span>
+        <p class="message-content"></p>
+        <div class="feedback-actions" aria-label="回答评价">
+          <button type="button" data-feedback-sentiment="positive">赞</button>
+          <button type="button" data-feedback-sentiment="negative">踩</button>
+          <button type="button" data-feedback-detail>详细评论</button>
+        </div>
+      </article>
+    </template>
+
+    <div id="feedback-modal" class="feedback-modal" hidden>
+      <button type="button" class="feedback-backdrop" data-feedback-close aria-label="关闭评价面板"></button>
+      <form id="feedback-form" class="feedback-sheet">
+        <div class="feedback-sheet__header">
+          <div>
+            <p class="eyebrow">帮助我们持续改进</p>
+            <h2>评价这次讲解</h2>
+          </div>
+          <button type="button" class="sheet-close" data-feedback-close aria-label="关闭">×</button>
+        </div>
+        <p class="feedback-sheet__hint">请选择 1-5 星，并留下您的建议。</p>
+        <div class="star-rating" aria-label="星级评分">
+          <button type="button" data-star="1" aria-label="1 星">★</button>
+          <button type="button" data-star="2" aria-label="2 星">★</button>
+          <button type="button" data-star="3" aria-label="3 星">★</button>
+          <button type="button" data-star="4" aria-label="4 星">★</button>
+          <button type="button" data-star="5" aria-label="5 星">★</button>
+        </div>
+        <textarea id="feedback-comment" maxlength="500" rows="4" placeholder="可以告诉我们回答是否准确、讲解是否自然，以及您希望补充的内容。"></textarea>
+        <button id="feedback-submit" class="feedback-submit" type="submit">提交评价</button>
+      </form>
+    </div>
+
+    <div id="toast" class="toast" hidden></div>
+    <script src="js/pako.min.js"></script>
+    <script src="js/DHLiveMini.js"></script>
+    <script src="js/MiniMateLoader.js"></script>
+    <script src="js/MiniLive2.js"></script>
+    <script type="module" src="../src/app.mjs?v=live-guide-7"></script>
+  </body>
+</html>

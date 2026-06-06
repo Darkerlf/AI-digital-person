@@ -3,14 +3,15 @@
     <h3>{{ title }}</h3>
     <p>{{ description }}</p>
     <div class="import-card__form">
-      <input v-model="sourcePath" :placeholder="placeholder" type="text" />
+      <input type="file" @change="handleFileChange" />
+      <p v-if="selectedFile" class="import-card__file">{{ selectedFile.name }}</p>
       <select v-if="requireScenicArea" v-model="scenicAreaId">
         <option value="">选择景区</option>
         <option v-for="item in scenicAreas" :key="item.id" :value="String(item.id)">
           {{ item.name }}
         </option>
       </select>
-      <button :disabled="loading" type="button" @click="handleSubmit">
+      <button :disabled="loading || !selectedFile" type="button" @click="handleSubmit">
         {{ loading ? '提交中...' : buttonText }}
       </button>
     </div>
@@ -20,19 +21,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     title: string
     description: string
     buttonText?: string
-    placeholder?: string
     requireScenicArea?: boolean
     scenicAreas?: Array<{ id: number; name: string }>
     loading?: boolean
   }>(),
   {
     buttonText: '提交导入',
-    placeholder: '输入源文件路径',
     requireScenicArea: false,
     scenicAreas: () => [],
     loading: false,
@@ -40,15 +39,23 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  submit: [payload: { sourcePath: string; scenicAreaId: number | null }]
+  submit: [payload: { file: File; scenicAreaId: number | null }]
 }>()
 
-const sourcePath = ref('')
+const selectedFile = ref<File | null>(null)
 const scenicAreaId = ref('')
 
+function handleFileChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  selectedFile.value = input.files?.[0] ?? null
+}
+
 function handleSubmit() {
+  if (!selectedFile.value) {
+    return
+  }
   emit('submit', {
-    sourcePath: sourcePath.value,
+    file: selectedFile.value,
     scenicAreaId: scenicAreaId.value ? Number(scenicAreaId.value) : null,
   })
 }
@@ -58,7 +65,7 @@ function handleSubmit() {
 .import-card {
   padding: 20px;
   border: 1px solid #dbe4f0;
-  border-radius: 20px;
+  border-radius: 8px;
   background: #fff;
 }
 
@@ -76,15 +83,24 @@ function handleSubmit() {
 .import-card__form select {
   padding: 10px 12px;
   border: 1px solid #cbd5e1;
-  border-radius: 12px;
+  border-radius: 8px;
+}
+
+.import-card__file {
+  color: #475569;
+  font-size: 14px;
 }
 
 .import-card__form button {
   width: fit-content;
   padding: 10px 14px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   color: #fff;
   background: #2563eb;
+}
+
+.import-card__form button:disabled {
+  opacity: 0.55;
 }
 </style>

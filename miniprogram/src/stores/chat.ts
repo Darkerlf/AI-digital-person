@@ -8,6 +8,9 @@ export interface ChatMessage {
   intent?: string
   loading?: boolean
   timestamp: number
+  audioUrl?: string
+  feedbackSentiment?: 'positive' | 'negative'
+  dbMessageId?: number
 }
 
 export const useChatStore = defineStore('chat', () => {
@@ -56,6 +59,20 @@ export const useChatStore = defineStore('chat', () => {
     sessionId.value = id
   }
 
+  function setMessageAudioUrl(id: string, url: string) {
+    const msg = messages.value.find((m) => m.id === id)
+    if (msg) {
+      msg.audioUrl = url
+    }
+  }
+
+  function setMessageFeedback(id: string, sentiment: 'positive' | 'negative') {
+    const msg = messages.value.find((m) => m.id === id)
+    if (msg) {
+      msg.feedbackSentiment = sentiment
+    }
+  }
+
   function clearMessages() {
     messages.value = []
     sessionId.value = null
@@ -70,6 +87,8 @@ export const useChatStore = defineStore('chat', () => {
     updateAssistantMessage,
     appendToMessage,
     setSessionId,
+    setMessageAudioUrl,
+    setMessageFeedback,
     clearMessages,
   }
 })

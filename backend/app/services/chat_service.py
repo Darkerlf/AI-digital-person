@@ -1,17 +1,19 @@
 import json
+import re
 import time
 import uuid
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.conversation_message import ConversationMessage
 from app.models.conversation_session import ConversationSession
+from app.models.faq_item import FAQItem
 from app.repositories.conversation_turn_repo import ConversationTurnRepository
 from app.schemas.chat import ChatResponse
-from app.schemas.route_template import RouteRecommendationRequest
 from app.services.intent_classifier import Intent, IntentClassifier
 from app.services.rag_pipeline import RAGPipeline, SYSTEM_PROMPT
-from app.services.route_recommendation_service import RouteRecommendationService
+from app.services.route_rag_recommendation_service import RouteRAGRecommendationService
 
 
 class ChatService:
@@ -29,8 +31,14 @@ class ChatService:
             if session:
                 return session
         session_key = f"tourist_{uuid.uuid4().hex[:16]}"
+        valid_area_id = None
+        if scenic_area_id:
+            from app.models.scenic_area import ScenicArea
+
+            if self.db.get(ScenicArea, scenic_area_id):
+                valid_area_id = scenic_area_id
         session = ConversationSession(
-            scenic_area_id=scenic_area_id,
+            scenic_area_id=valid_area_id,
             session_key=session_key,
             channel="miniprogram",
             visitor_id=visitor_id,
@@ -49,6 +57,23 @@ class ChatService:
             history.append({"role": role, "content": turn.content})
         return history
 
+    def _normalize_question(self, value: str) -> str:
+        return re.sub(r"[\s，。！？、,.!?;；:：]+", "", value or "").lower()
+
+    def _find_exact_faq_answer(self, message: str, scenic_area_id: int | None) -> str | None:
+        normalized = self._normalize_question(message)
+        if not normalized:
+            return None
+
+        query = select(FAQItem).where(FAQItem.status == "active")
+        if scenic_area_id:
+            query = query.where(FAQItem.scenic_area_id == scenic_area_id)
+        faqs = self.db.execute(query.order_by(FAQItem.priority.desc(), FAQItem.id.asc())).scalars().all()
+        for faq in faqs:
+            if self._normalize_question(faq.question) == normalized:
+                return faq.answer
+        return None
+
     async def handle_message(
         self,
         message: str,
@@ -57,9 +82,7 @@ class ChatService:
         visitor_id: str | None = None,
     ) -> ChatResponse:
         start_time = time.time()
-
         session = self._get_or_create_session(session_id, scenic_area_id, visitor_id)
-
         intent = await self.intent_classifier.classify(message)
 
         self.turn_repo.add_turn(
@@ -72,32 +95,35 @@ class ChatService:
         history = self._build_history(session.id)
 
         if intent == Intent.ROUTE_RECOMMEND:
-            route_service = RouteRecommendationService(self.db)
+            route_service = RouteRAGRecommendationService(self.db)
             try:
-                req = RouteRecommendationRequest(
+                answer = await route_service.generate_answer(
+                    message,
                     scenic_area_id=scenic_area_id or session.scenic_area_id,
-                    duration_minutes=120,
+                    history=history,
                 )
-                recommendation = route_service.generate(req)
-                template_name = recommendation.get("matched_template", {}).get("name", "经典路线")
-                answer = f"为您推荐路线：{template_name}"
             except Exception:
-                answer = "抱歉，暂时无法为您推荐路线，请告诉我您的偏好，我来帮您规划。"
+                answer = "抱歉，暂时无法为您推荐路线。您可以告诉我游览时长、同行人群和偏好，我再为您规划。"
             sources = []
         elif intent == Intent.CHITCHAT:
             answer = await self.rag_pipeline.answer(message, history=history)
             sources = []
         else:
-            chunks = await self.rag_pipeline.retrieve(message)
-            context = self.rag_pipeline.build_context(chunks) if chunks else None
-            result = await self.rag_pipeline.llm_client.generate(
-                system_prompt=SYSTEM_PROMPT,
-                user_message=message,
-                context=context,
-                history=history,
-            )
-            answer = result.text
-            sources = [{"title": c["title"], "source": c["source"]} for c in chunks]
+            direct_answer = self._find_exact_faq_answer(message, scenic_area_id or session.scenic_area_id)
+            if direct_answer:
+                answer = direct_answer
+                sources = [{"title": "FAQ", "source": "faq_exact"}]
+            else:
+                chunks = await self.rag_pipeline.retrieve(message)
+                context = self.rag_pipeline.build_context(chunks) if chunks else None
+                result = await self.rag_pipeline.llm_client.generate(
+                    system_prompt=SYSTEM_PROMPT,
+                    user_message=message,
+                    context=context,
+                    history=history,
+                )
+                answer = result.text
+                sources = [{"title": c["title"], "source": c["source"]} for c in chunks]
 
         self.turn_repo.add_turn(
             session_id=session.id,
@@ -130,7 +156,6 @@ class ChatService:
         scenic_area_id: int | None = None,
         visitor_id: str | None = None,
     ):
-        """Streaming version — yields text chunks, then final metadata."""
         session = self._get_or_create_session(session_id, scenic_area_id, visitor_id)
         intent = await self.intent_classifier.classify(message)
 
@@ -145,19 +170,26 @@ class ChatService:
         full_answer = ""
 
         if intent == Intent.ROUTE_RECOMMEND:
-            route_service = RouteRecommendationService(self.db)
+            route_service = RouteRAGRecommendationService(self.db)
             try:
-                req = RouteRecommendationRequest(
+                answer = await route_service.generate_answer(
+                    message,
                     scenic_area_id=scenic_area_id or session.scenic_area_id,
-                    duration_minutes=120,
+                    history=history,
                 )
-                recommendation = route_service.generate(req)
-                template_name = recommendation.get("matched_template", {}).get("name", "经典路线")
-                answer = f"为您推荐路线：{template_name}"
             except Exception:
                 answer = "抱歉，暂时无法为您推荐路线。"
             yield answer
             full_answer = answer
+        elif intent == Intent.SCENIC_QA:
+            direct_answer = self._find_exact_faq_answer(message, scenic_area_id or session.scenic_area_id)
+            if direct_answer:
+                yield direct_answer
+                full_answer = direct_answer
+            else:
+                async for chunk in self.rag_pipeline.answer_stream(message, history=history):
+                    yield chunk
+                    full_answer += chunk
         else:
             async for chunk in self.rag_pipeline.answer_stream(message, history=history):
                 yield chunk
@@ -177,5 +209,6 @@ class ChatService:
         )
         self.db.add(msg)
         self.db.commit()
+        self.db.refresh(msg)
 
-        yield f"\n__meta__:{json.dumps({'session_id': session.id, 'intent': intent.value})}"
+        yield f"\n__meta__:{json.dumps({'session_id': session.id, 'message_id': msg.id, 'intent': intent.value})}"

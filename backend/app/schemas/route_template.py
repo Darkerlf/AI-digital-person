@@ -64,6 +64,12 @@ class RouteRecommendationRequest(BaseModel):
     interest_tags: list[str] = Field(default_factory=list)
     duration_minutes: int
     audience_tags: list[str] = Field(default_factory=list)
+    start_spot_name: str | None = None
+    end_spot_name: str | None = None
+    pace: str | None = None
+    mobility_tags: list[str] = Field(default_factory=list)
+    service_needs: list[str] = Field(default_factory=list)
+    reroute_from_spot_name: str | None = None
 
 
 class RouteRecommendationMatchedTemplate(BaseModel):
@@ -75,10 +81,16 @@ class RouteRecommendationMatchedTemplate(BaseModel):
 
 
 class RouteRecommendationSpotRead(BaseModel):
-    scenic_spot_id: int
+    scenic_spot_id: int | None = None
     name: str
     stay_minutes: int | None = None
     highlight: str | None = None
+
+
+class RouteRecommendationSource(BaseModel):
+    title: str | None = None
+    source: str | None = None
+    score: float | None = None
 
 
 class RouteRecommendationResponse(BaseModel):
@@ -87,3 +99,4 @@ class RouteRecommendationResponse(BaseModel):
     match_reason: str
     summary: str | None = None
     spots: list[RouteRecommendationSpotRead]
+    sources: list[RouteRecommendationSource] = Field(default_factory=list)

@@ -4,5 +4,23 @@
   "description": "灵山胜境智慧旅游小程序",
   "versionName": "0.1.0",
   "versionCode": "100",
-  "transformPx": false
+  "transformPx": false,
+  "mp-weixin": {
+    "appid": "wx1b5593811ec45aa0",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "postcss": true,
+      "minified": true
+    },
+    "permission": {
+      "scope.userLocation": {
+        "desc": "你的位置信息将用于地图导览中显示当前位置"
+      }
+    },
+    "requiredPrivateInfos": [
+      "getLocation"
+    ],
+    "usingComponents": true
+  }
 }

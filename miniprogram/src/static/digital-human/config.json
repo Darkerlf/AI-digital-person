@@ -1,0 +1,44 @@
+{
+  "avatarId": "guide_female_02",
+  "imageSize": {
+    "width": 455,
+    "height": 700
+  },
+  "base": "base_halfbody.png",
+  "mouthBox": {
+    "x": 172,
+    "y": 266,
+    "width": 110,
+    "height": 57
+  },
+  "blinkBox": {
+    "x": 105,
+    "y": 110,
+    "width": 244,
+    "height": 140
+  },
+  "mouthFrames": {
+    "closed": "mouth_closed.png",
+    "small": "mouth_small.png",
+    "mid": "mouth_mid.png",
+    "big": "mouth_big.png",
+    "round": "mouth_round.png"
+  },
+  "expressions": {
+    "smile": "expr_smile.png",
+    "enthusiastic": "expr_enthusiastic.png",
+    "thinking": "expr_thinking.png"
+  },
+  "blinkFrames": {
+    "open": "blink_open.png",
+    "closed": "blink_closed.png"
+  },
+  "expressionMode": "full-image-replacement",
+  "layerOrder": [
+    "base",
+    "expression(optional, replacement)",
+    "blink overlay",
+    "mouth overlay"
+  ],
+  "note": "mouthBox/blinkBox 已按当前 base_halfbody.png 粗调；接入小程序后可根据 rpx 缩放再微调 1-3px。"
+}

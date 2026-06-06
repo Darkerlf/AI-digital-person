@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class AIProviderCreate(BaseModel):
@@ -24,3 +24,19 @@ class AdminUserCreate(BaseModel):
     password: str
     role: str
     status: str = "active"
+
+
+class AdminUserUpdate(BaseModel):
+    role: str | None = None
+    status: str | None = None
+    password: str | None = None
+
+
+class AdminUserRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    username: str
+    role: str
+    status: str
+    last_login_at: str | None = None

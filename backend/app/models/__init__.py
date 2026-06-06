@@ -15,9 +15,12 @@ from app.models.knowledge_document import KnowledgeDocument
 from app.models.operation_log import OperationLog
 from app.models.route_template import RouteTemplate
 from app.models.route_template_spot import RouteTemplateSpot
+from app.models.route_recommendation_record import RouteRecommendationRecord
 from app.models.scenic_area import ScenicArea
 from app.models.scenic_spot import ScenicSpot
 from app.models.scenic_spot_tag import ScenicSpotTag
+from app.models.service_poi import ServicePOI
+from app.models.visitor import Visitor
 from app.models.visitor_behavior_event import VisitorBehaviorEvent
 
 
@@ -40,8 +43,11 @@ def load_all_models() -> None:
         OperationLog,
         RouteTemplate,
         RouteTemplateSpot,
+        RouteRecommendationRecord,
         ScenicArea,
         ScenicSpot,
         ScenicSpotTag,
+        ServicePOI,
+        Visitor,
         VisitorBehaviorEvent,
     )

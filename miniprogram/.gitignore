@@ -3,3 +3,5 @@ dist/
 .hbuilderx/
 unpackage/
 *.log
+.env.local
+.dev-logs/

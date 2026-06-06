@@ -1,208 +1,241 @@
-<template>
-  <view class="digital-human" :class="{ speaking: isSpeaking, thinking: isThinking }">
-    <!-- 头部 -->
-    <view class="dh-head">
-      <!-- 眼睛 -->
-      <view class="dh-eyes">
-        <view class="dh-eye left" :class="{ blink: !isSpeaking }">
-          <view class="dh-pupil" />
+﻿<template>
+  <view class="digital-human" :class="[{ speaking: isSpeaking, thinking: isThinking }, `emotion-${resolvedEmotion}`]">
+    <view class="avatar-stage">
+      <view class="avatar-rig">
+        <image class="avatar-layer base-layer" :src="baseImage" mode="widthFix" />
+        <view v-if="showBlinkClosed" class="blink-mask left-eye">
+          <view class="blink-line" />
         </view>
-        <view class="dh-eye right" :class="{ blink: !isSpeaking }">
-          <view class="dh-pupil" />
+        <view v-if="showBlinkClosed" class="blink-mask right-eye">
+          <view class="blink-line" />
         </view>
-      </view>
-      <!-- 嘴巴 -->
-      <view class="dh-mouth" :class="{ talking: isSpeaking }">
-        <view class="dh-lip" />
-      </view>
-      <!-- 脸颊 -->
-      <view class="dh-cheeks">
-        <view class="dh-cheek left" />
-        <view class="dh-cheek right" />
+        <image
+          v-if="showMouthLayer"
+          class="avatar-layer mouth-layer"
+          :class="`mouth-${props.mouth}`"
+          :src="mouthImage"
+          :style="mouthStyle"
+          mode="scaleToFill"
+        />
       </view>
     </view>
-
-    <!-- 身体 -->
-    <view class="dh-body">
-      <view class="dh-outfit" />
-      <view class="dh-badge">
-        <text class="badge-text">AI导游</text>
-      </view>
-    </view>
-
-    <!-- 状态文字 -->
-    <view class="dh-status">
-      <text v-if="isThinking">思考中...</text>
-      <text v-else-if="isSpeaking">说话中</text>
-      <text v-else>等待提问</text>
+    <view class="status-dot" :class="{ active: isSpeaking || isThinking }">
+      <text>{{ statusText }}</text>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { digitalHumanAssetBase } from '../config/assets'
+import { mouthVisualProfile } from '../utils/mouthSmoothing'
+
+type MouthShape = 'closed' | 'small' | 'mid' | 'big' | 'round'
+type AvatarEmotion = 'neutral' | 'smile' | 'enthusiastic' | 'thinking'
+
+const realisticGuideImage = '/static/digital-human/realistic_guide.png'
+
+const props = withDefaults(defineProps<{
   isSpeaking: boolean
   isThinking: boolean
-}>()
+  mouth?: MouthShape
+  emotion?: AvatarEmotion
+}>(), {
+  mouth: 'closed',
+  emotion: 'neutral',
+})
+
+const assetBase = digitalHumanAssetBase
+const baseImage = realisticGuideImage
+const isBlinking = ref(false)
+let blinkTimer: ReturnType<typeof setInterval> | null = null
+let blinkResetTimer: ReturnType<typeof setTimeout> | null = null
+
+const mouthImages: Record<MouthShape, string> = {
+  closed: `${assetBase}/mouth_closed.png`,
+  small: `${assetBase}/mouth_small.png`,
+  mid: `${assetBase}/mouth_mid.png`,
+  big: `${assetBase}/mouth_big.png`,
+  round: `${assetBase}/mouth_round.png`,
+}
+
+const mouthImage = computed(() => mouthImages[props.mouth] || mouthImages.closed)
+const useRealisticStill = computed(() => baseImage === realisticGuideImage)
+const resolvedEmotion = computed<AvatarEmotion>(() => {
+  if (props.isThinking) return 'thinking'
+  if (props.isSpeaking && props.emotion === 'neutral') return 'smile'
+  return props.emotion
+})
+const showBlinkClosed = computed(() => !useRealisticStill.value && isBlinking.value)
+const showMouthLayer = computed(() => !useRealisticStill.value && (props.isSpeaking || props.mouth !== 'closed'))
+const mouthStyle = computed(() => {
+  const profile = mouthVisualProfile(props.mouth)
+  return `transform: translateY(${profile.translateY}rpx) scale(${profile.scaleX}, ${profile.scaleY});`
+})
+const statusText = computed(() => {
+  if (props.isSpeaking) return '讲解中'
+  if (props.isThinking) return '思考中'
+  return '待机'
+})
+
+function blinkOnce() {
+  if (props.mouth === 'big') return
+  isBlinking.value = true
+  blinkResetTimer = setTimeout(() => {
+    isBlinking.value = false
+  }, props.isSpeaking ? 90 : 120)
+}
+
+onMounted(() => {
+  blinkTimer = setInterval(blinkOnce, 3600)
+})
+
+onUnmounted(() => {
+  if (blinkTimer) clearInterval(blinkTimer)
+  if (blinkResetTimer) clearTimeout(blinkResetTimer)
+})
+
+watch(
+  () => props.isSpeaking,
+  (speaking) => {
+    if (speaking) {
+      isBlinking.value = false
+    }
+  },
+)
 </script>
 
 <style scoped>
 .digital-human {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20rpx;
-}
-
-/* 头部 */
-.dh-head {
-  width: 180rpx;
-  height: 200rpx;
-  background: #ffecd2;
-  border-radius: 90rpx 90rpx 80rpx 80rpx;
+  justify-content: center;
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.1);
 }
 
-/* 眼睛 */
-.dh-eyes {
-  display: flex;
-  gap: 40rpx;
-  margin-top: -20rpx;
-}
-
-.dh-eye {
-  width: 36rpx;
-  height: 36rpx;
-  background: #ffffff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2rpx solid #333;
-}
-
-.dh-pupil {
-  width: 16rpx;
-  height: 16rpx;
-  background: #333;
-  border-radius: 50%;
-}
-
-.dh-eye.blink {
-  animation: blink 3s infinite;
-}
-
-@keyframes blink {
-  0%, 95%, 100% { height: 36rpx; }
-  97% { height: 4rpx; }
-}
-
-/* 嘴巴 */
-.dh-mouth {
-  width: 40rpx;
-  height: 20rpx;
-  margin-top: 20rpx;
+.avatar-stage {
+  width: 250rpx;
+  height: 385rpx;
   position: relative;
   overflow: hidden;
+  transform-origin: bottom center;
 }
 
-.dh-lip {
-  width: 40rpx;
-  height: 20rpx;
-  border-bottom: 4rpx solid #e8836b;
-  border-radius: 0 0 20rpx 20rpx;
+.avatar-rig {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 72%;
 }
 
-.dh-mouth.talking .dh-lip {
-  animation: talk 0.3s infinite;
+.digital-human .avatar-rig {
+  animation: idle-breathe 3600ms ease-in-out infinite;
 }
 
-@keyframes talk {
-  0%, 100% { height: 10rpx; }
-  50% { height: 30rpx; }
+.digital-human.thinking .avatar-rig {
+  animation: think-nod 1300ms ease-in-out infinite;
 }
 
-/* 脸颊 */
-.dh-cheeks {
-  display: flex;
-  gap: 100rpx;
-  margin-top: 10rpx;
+.digital-human.speaking .avatar-rig {
+  animation: speak-breathe 1500ms ease-in-out infinite;
 }
 
-.dh-cheek {
-  width: 24rpx;
-  height: 12rpx;
-  background: #ffb3b3;
-  border-radius: 50%;
-  opacity: 0.6;
+.avatar-layer {
+  position: absolute;
+  display: block;
+  pointer-events: none;
 }
 
-/* 身体 */
-.dh-body {
-  width: 140rpx;
-  height: 120rpx;
-  background: #1a73e8;
-  border-radius: 20rpx 20rpx 40rpx 40rpx;
-  margin-top: -10rpx;
-  position: relative;
+.base-layer {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: auto;
+}
+
+.blink-mask {
+  position: absolute;
+  top: 29.2%;
+  width: 12.2%;
+  height: 5.6%;
+  border-radius: 999rpx;
+  background: #f3c8b9;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.dh-outfit {
-  width: 100rpx;
-  height: 60rpx;
-  background: rgba(255,255,255,0.2);
-  border-radius: 10rpx;
+.left-eye {
+  left: 34%;
 }
 
-.dh-badge {
-  position: absolute;
-  bottom: 10rpx;
-  background: #ffffff;
-  border-radius: 12rpx;
-  padding: 4rpx 12rpx;
+.right-eye {
+  left: 54.5%;
 }
 
-.badge-text {
-  font-size: 18rpx;
-  color: #1a73e8;
-  font-weight: bold;
+.blink-line {
+  width: 88%;
+  height: 4rpx;
+  border-radius: 999rpx;
+  background: #2f1e1b;
 }
 
-/* 思考状态 */
-.digital-human.thinking .dh-head {
-  animation: think-bob 1s infinite;
+.mouth-layer {
+  left: 37.8%;
+  top: 38%;
+  width: 24.18%;
+  height: 8.14%;
+  z-index: 3;
+  transform-origin: 50% 60%;
+  transition: transform 70ms ease-out, opacity 90ms ease-out;
+  will-change: transform;
 }
 
-@keyframes think-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8rpx); }
+.mouth-closed {
+  opacity: 0.88;
 }
 
-/* 说话状态 */
-.digital-human.speaking .dh-head {
-  animation: speak-bob 0.5s infinite;
+.mouth-big,
+.mouth-round {
+  opacity: 1;
 }
 
-@keyframes speak-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4rpx); }
+.status-dot {
+  margin-top: 8rpx;
+  min-width: 96rpx;
+  height: 34rpx;
+  border-radius: 17rpx;
+  background: rgba(255, 255, 255, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* 状态文字 */
-.dh-status {
-  margin-top: 16rpx;
+.status-dot.active {
+  background: rgba(229, 243, 246, 0.96);
 }
 
-.dh-status text {
-  font-size: 22rpx;
-  color: #999;
+.status-dot text {
+  color: #238fa3;
+  font-size: 20rpx;
+  line-height: 1;
+}
+
+@keyframes idle-breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-2rpx) scale(1.004); }
+}
+
+@keyframes speak-breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  45% { transform: translateY(-3rpx) scale(1.006); }
+}
+
+@keyframes think-nod {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-3rpx) rotate(-0.45deg); }
 }
 </style>

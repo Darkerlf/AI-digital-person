@@ -1,3 +1,4 @@
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -8,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.core.database import Base, get_db
 from app.main import app
 from app.models import load_all_models
+from app.models.faq_item import FAQItem
 from app.models.scenic_area import ScenicArea
 from app.services.intent_classifier import Intent
 
@@ -107,3 +109,35 @@ class TestChatService:
             with patch.object(service.rag_pipeline, "answer", new_callable=AsyncMock, return_value="你好！"):
                 result = await service.handle_message(message="你好", scenic_area_id=1)
         assert result.intent == "chitchat"
+
+
+def test_handle_message_returns_exact_faq_without_rag_or_llm(chat_db):
+    from app.services.chat_service import ChatService
+
+    chat_db.add(
+        FAQItem(
+            scenic_area_id=1,
+            question="\u95e8\u7968\u591a\u5c11\u94b1",
+            answer="\u6210\u4eba\u7968\u53c2\u8003\u4ef7\u662f210\u5143\u3002",
+            category="\u7968\u52a1",
+            priority=100,
+            status="active",
+        )
+    )
+    chat_db.commit()
+
+    async def run_test():
+        service = ChatService(chat_db)
+        with patch.object(service.intent_classifier, "classify", new_callable=AsyncMock, return_value=Intent.SCENIC_QA):
+            with patch.object(
+                service.rag_pipeline,
+                "retrieve",
+                new_callable=AsyncMock,
+                side_effect=AssertionError("RAG should be skipped for exact FAQ hit"),
+            ):
+                return await service.handle_message(message="\u95e8\u7968\u591a\u5c11\u94b1", scenic_area_id=1)
+
+    result = asyncio.run(run_test())
+
+    assert result.intent == "scenic_qa"
+    assert "210" in result.answer

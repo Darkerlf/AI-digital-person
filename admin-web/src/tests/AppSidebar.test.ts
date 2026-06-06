@@ -31,4 +31,27 @@ describe('AppSidebar', () => {
     expect(wrapper.text()).not.toContain('知识管理')
     expect(wrapper.text()).not.toContain('路线模板')
   })
+  it('shows service POI management to content admins', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(() => ''),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    })
+
+    setActivePinia(createPinia())
+    const store = useAuthStore()
+    store.setProfile({ username: 'content_admin', role: 'content_admin' })
+
+    const wrapper = mount(AppSidebar, {
+      global: {
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+    })
+
+    expect(wrapper.text()).toContain('便民服务点')
+  })
 })

@@ -17,15 +17,17 @@ Planned source layout for implementation:
 
 ## Build, Test, and Development Commands
 
-Use these commands once the codebase is scaffolded:
+**Python interpreter**: Use `D:\ProgramData\condaData\envs_dirs\dev_envs_1\python.exe` for all backend commands (not the .venv one).
 
-- Backend setup: `cd backend && python -m venv .venv && .\.venv\Scripts\python -m pip install -r requirements.txt`
-- Backend run: `.\.venv\Scripts\python -m uvicorn app.main:app --reload`
-- Backend tests: `.\.venv\Scripts\python -m pytest tests -q`
-- Frontend install: `cd admin-web && npm.cmd install`
-- Frontend dev server: `npm.cmd run dev`
-- Frontend tests: `npm.cmd run test`
-- Frontend build: `npm.cmd run build`
+- Backend run: `"D:\ProgramData\condaData\envs_dirs\dev_envs_1\python.exe" -m uvicorn app.main:app --reload`
+- Backend tests: `"D:\ProgramData\condaData\envs_dirs\dev_envs_1\python.exe" -m pytest tests -q`
+- Backend install deps: `"D:\ProgramData\condaData\envs_dirs\dev_envs_1\python.exe" -m pip install -r requirements.txt`
+- Frontend install: `cd admin-web && npm install`
+- Frontend dev server: `npm run dev`
+- Frontend tests: `npm run test`
+- Frontend build: `npm run build`
+- Miniprogram dev (H5): `cd miniprogram && npm run dev:h5`
+- Miniprogram dev (WeChat): `cd miniprogram && npm run dev:mp-weixin`
 
 Use `npm.cmd` on Windows PowerShell to avoid execution policy issues.
 

@@ -7,10 +7,21 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_db
+from app.core.config import settings
 from app.core.security import hash_password
 from app.main import app
 from app.models import load_all_models
 from app.models.admin_user import AdminUser
+
+
+@pytest.fixture(autouse=True)
+def disable_external_storage() -> Generator[None, None, None]:
+    original_backend = settings.storage_backend
+    settings.storage_backend = "local"
+    try:
+        yield
+    finally:
+        settings.storage_backend = original_backend
 
 
 @pytest.fixture()

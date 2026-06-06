@@ -13,6 +13,12 @@ class DigitalHumanService:
     def list_all(self):
         return self.repo.list_digital_humans()
 
+    def get_active(self, scenic_area_id: int | None = None):
+        item = self.repo.get_active_digital_human(scenic_area_id)
+        if item is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Active digital human config not found")
+        return item
+
     def create(self, payload: DigitalHumanCreate):
         return self.repo.create_digital_human(**payload.model_dump())
 

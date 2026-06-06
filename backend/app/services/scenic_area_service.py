@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.repositories.scenic_area_repo import ScenicAreaRepository
 from app.schemas.scenic_area import ScenicAreaCreate, ScenicAreaUpdate
+from app.services.operation_log_service import record_operation_log
 
 
 class ScenicAreaService:
@@ -10,8 +11,18 @@ class ScenicAreaService:
         self.db = db
         self.repo = ScenicAreaRepository(db)
 
-    def create(self, payload: ScenicAreaCreate):
-        return self.repo.create(**payload.model_dump())
+    def create(self, payload: ScenicAreaCreate, current_user=None):
+        area = self.repo.create(**payload.model_dump())
+        record_operation_log(
+            self.db,
+            module="scenic",
+            action="create",
+            target_type="scenic_area",
+            target_id=area.id,
+            detail={"code": area.code, "name": area.name},
+            current_user=current_user,
+        )
+        return area
 
     def list_all(self):
         return self.repo.list_all()
@@ -22,15 +33,35 @@ class ScenicAreaService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scenic area not found")
         return area
 
-    def update(self, area_id: int, payload: ScenicAreaUpdate):
+    def update(self, area_id: int, payload: ScenicAreaUpdate, current_user=None):
         area = self.get(area_id)
-        for key, value in payload.model_dump(exclude_unset=True).items():
+        values = payload.model_dump(exclude_unset=True)
+        for key, value in values.items():
             setattr(area, key, value)
         self.db.commit()
         self.db.refresh(area)
+        record_operation_log(
+            self.db,
+            module="scenic",
+            action="update",
+            target_type="scenic_area",
+            target_id=area.id,
+            detail={"changed_fields": sorted(values.keys())},
+            current_user=current_user,
+        )
         return area
 
-    def delete(self, area_id: int) -> None:
+    def delete(self, area_id: int, current_user=None) -> None:
         area = self.get(area_id)
+        detail = {"code": area.code, "name": area.name}
         self.db.delete(area)
         self.db.commit()
+        record_operation_log(
+            self.db,
+            module="scenic",
+            action="delete",
+            target_type="scenic_area",
+            target_id=area_id,
+            detail=detail,
+            current_user=current_user,
+        )

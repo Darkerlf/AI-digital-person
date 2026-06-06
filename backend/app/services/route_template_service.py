@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.repositories.route_template_repo import RouteTemplateRepository
 from app.schemas.route_template import RouteTemplateCreate, RouteTemplateUpdate
+from app.services.operation_log_service import record_operation_log
 
 
 class RouteTemplateService:
@@ -51,14 +52,44 @@ class RouteTemplateService:
     def get_read(self, template_id: int) -> dict:
         return self._to_read_dict(self.get(template_id))
 
-    def create(self, payload: RouteTemplateCreate) -> dict:
+    def create(self, payload: RouteTemplateCreate, current_user=None) -> dict:
         template = self.repo.create(**payload.model_dump())
+        record_operation_log(
+            self.db,
+            module="route",
+            action="create",
+            target_type="route_template",
+            target_id=template.id,
+            detail={"name": template.name, "template_type": template.template_type},
+            current_user=current_user,
+        )
         return self._to_read_dict(template)
 
-    def update(self, template_id: int, payload: RouteTemplateUpdate) -> dict:
+    def update(self, template_id: int, payload: RouteTemplateUpdate, current_user=None) -> dict:
         template = self.get(template_id)
-        updated = self.repo.update(template, **payload.model_dump(exclude_unset=True))
+        values = payload.model_dump(exclude_unset=True)
+        updated = self.repo.update(template, **values)
+        record_operation_log(
+            self.db,
+            module="route",
+            action="update",
+            target_type="route_template",
+            target_id=updated.id,
+            detail={"changed_fields": sorted(values.keys())},
+            current_user=current_user,
+        )
         return self._to_read_dict(updated)
 
-    def delete(self, template_id: int) -> None:
-        self.repo.delete(self.get(template_id))
+    def delete(self, template_id: int, current_user=None) -> None:
+        template = self.get(template_id)
+        detail = {"name": template.name, "template_type": template.template_type}
+        self.repo.delete(template)
+        record_operation_log(
+            self.db,
+            module="route",
+            action="delete",
+            target_type="route_template",
+            target_id=template_id,
+            detail=detail,
+            current_user=current_user,
+        )

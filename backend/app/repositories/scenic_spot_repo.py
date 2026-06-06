@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.models.scenic_spot import ScenicSpot
@@ -9,8 +9,20 @@ class ScenicSpotRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def list_all(self) -> list[ScenicSpot]:
-        return self.db.execute(select(ScenicSpot).order_by(ScenicSpot.id.asc())).scalars().all()
+    def list_all(self, keyword: str | None = None, open_status: str | None = None) -> list[ScenicSpot]:
+        statement = select(ScenicSpot)
+        if keyword:
+            pattern = f"%{keyword}%"
+            statement = statement.where(
+                or_(
+                    ScenicSpot.name.like(pattern),
+                    ScenicSpot.alias.like(pattern),
+                    ScenicSpot.spot_code.like(pattern),
+                )
+            )
+        if open_status:
+            statement = statement.where(ScenicSpot.open_status == open_status)
+        return self.db.execute(statement.order_by(ScenicSpot.id.asc())).scalars().all()
 
     def get(self, spot_id: int) -> ScenicSpot | None:
         return self.db.get(ScenicSpot, spot_id)

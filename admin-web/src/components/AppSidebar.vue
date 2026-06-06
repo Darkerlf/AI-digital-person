@@ -24,6 +24,7 @@ const items = [
   { to: '/', label: '工作台', roles: ['super_admin', 'ops_admin'] },
   { to: '/scenic-areas', label: '景区管理', roles: ['super_admin', 'content_admin'] },
   { to: '/scenic-spots', label: '景点管理', roles: ['super_admin', 'content_admin'] },
+  { to: '/service-pois', label: '便民服务点', roles: ['super_admin', 'content_admin'] },
   { to: '/route-templates', label: '路线模板', roles: ['super_admin', 'content_admin'] },
   { to: '/knowledge/documents', label: '知识管理', roles: ['super_admin', 'content_admin'] },
   { to: '/knowledge/correction-tasks', label: '知识修正任务', roles: ['super_admin', 'content_admin'] },
@@ -33,6 +34,7 @@ const items = [
   { to: '/feedback-report', label: '感受度报告', roles: ['super_admin', 'ops_admin'] },
   { to: '/digital-humans', label: '数字人配置', roles: ['super_admin', 'content_admin'] },
   { to: '/settings/ai-providers', label: 'AI 配置', roles: ['super_admin'] },
+  { to: '/settings/admin-users', label: '账号管理', roles: ['super_admin'] },
   { to: '/operation-logs', label: '操作日志', roles: ['super_admin', 'ops_admin'] },
 ]
 

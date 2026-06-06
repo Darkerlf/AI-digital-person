@@ -13,14 +13,17 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import { useAuthStore } from '../stores/auth'
+
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const title = computed(() => String(route.meta.title ?? '后台管理'))
 const description = computed(() => String(route.meta.description ?? ''))
 
 function handleLogout() {
-  localStorage.removeItem('accessToken')
+  authStore.clearAuth()
   router.push('/login')
 }
 </script>

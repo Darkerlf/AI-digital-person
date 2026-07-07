@@ -31,13 +31,33 @@ vi.mock('../api/client', () => ({
   },
 }))
 
+async function flushPromises() {
+  await Promise.resolve()
+  await Promise.resolve()
+  await new Promise((resolve) => setTimeout(resolve, 0))
+}
+
 describe('RouteTemplateView', () => {
   it('renders template management and preview areas', async () => {
     const wrapper = mount(RouteTemplateView)
-    await Promise.resolve()
-    await Promise.resolve()
+    await flushPromises()
 
     expect(wrapper.text()).toContain('路线模板管理')
     expect(wrapper.text()).toContain('推荐预览')
+  })
+
+  it('explains numeric fields with labels, units and examples', async () => {
+    const wrapper = mount(RouteTemplateView)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('最短适用时长')
+    expect(text).toContain('最长适用时长')
+    expect(text).toContain('单位：分钟')
+    expect(text).toContain('优先级')
+    expect(text).toContain('数字越大越优先')
+    expect(text).toContain('站点顺序')
+    expect(text).toContain('站点停留时间')
+    expect(text).toContain('预览游玩时长')
   })
 })

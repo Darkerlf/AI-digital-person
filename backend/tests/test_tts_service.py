@@ -106,6 +106,33 @@ class TestTTSService:
         anyio.run(run_test)
         assert called == {"text": "欢迎来到灵山胜境", "voice": "loongbella_v3"}
 
+    def test_normalize_wav_header_rewrites_dashscope_streaming_placeholder_sizes(self):
+        service = TTSService()
+        pcm = b"\x01\x02\x03\x04"
+        wav = (
+            b"RIFF"
+            + (0x7FFFFFBF).to_bytes(4, "little")
+            + b"WAVE"
+            + b"fmt "
+            + (16).to_bytes(4, "little")
+            + (1).to_bytes(2, "little")
+            + (1).to_bytes(2, "little")
+            + (16000).to_bytes(4, "little")
+            + (32000).to_bytes(4, "little")
+            + (2).to_bytes(2, "little")
+            + (16).to_bytes(2, "little")
+            + b"data"
+            + (0x7FFFFFFF).to_bytes(4, "little")
+            + pcm
+        )
+
+        normalized = service.normalize_wav_header(wav)
+
+        assert int.from_bytes(normalized[4:8], "little") == len(normalized) - 8
+        data_index = normalized.find(b"data")
+        assert data_index > 0
+        assert int.from_bytes(normalized[data_index + 4:data_index + 8], "little") == len(pcm)
+
     def test_extract_cosyvoice_result_from_sse_payload(self):
         service = TTSService()
         sse_text = "\n".join(

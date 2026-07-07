@@ -7,9 +7,11 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_db
+from app.core.security import create_access_token
 from app.main import app
 from app.models import load_all_models
 from app.models.scenic_area import ScenicArea
+from app.models.visitor import Visitor
 from app.services.intent_classifier import Intent
 
 
@@ -41,9 +43,19 @@ def api_db():
     app.dependency_overrides.clear()
 
 
+def _visitor_headers(db: Session) -> dict[str, str]:
+    visitor = Visitor(openid="wx-chat-api", nickname="聊天游客")
+    db.add(visitor)
+    db.commit()
+    db.refresh(visitor)
+    token = create_access_token(f"visitor:{visitor.id}")
+    return {"Authorization": f"Bearer {token}"}
+
+
 class TestTouristChatAPI:
     def test_chat_endpoint_returns_answer(self, api_db):
         client = TestClient(app)
+        headers = _visitor_headers(api_db)
         mock_chunks = [{"text": "灵山大佛高88米", "source": "faq", "title": "FAQ", "score": 1.0}]
         mock_llm_result = MagicMock()
         mock_llm_result.text = "灵山大佛高88米"
@@ -58,6 +70,7 @@ class TestTouristChatAPI:
 
                 response = client.post(
                     "/api/tourist/chat",
+                    headers=headers,
                     json={"message": "灵山大佛多高？", "scenic_area_id": 1},
                 )
         assert response.status_code == 200
@@ -68,6 +81,7 @@ class TestTouristChatAPI:
 
     def test_chat_stream_endpoint_returns_sse(self, api_db):
         client = TestClient(app)
+        headers = _visitor_headers(api_db)
 
         with patch("app.services.chat_service.IntentClassifier.classify", new_callable=AsyncMock, return_value=Intent.SCENIC_QA):
             with patch("app.services.chat_service.RAGPipeline") as MockRAG:
@@ -77,9 +91,16 @@ class TestTouristChatAPI:
                     yield "你好"
                     yield "世界"
 
-                instance.answer_stream = fake_stream
+                instance.retrieve = AsyncMock(return_value=[])
+                instance.build_context.return_value = None
+                instance.llm_client.generate_stream = fake_stream
 
-                with client.stream("POST", "/api/tourist/chat/stream", json={"message": "你好"}) as response:
+                with client.stream(
+                    "POST",
+                    "/api/tourist/chat/stream",
+                    headers=headers,
+                    json={"message": "你好"},
+                ) as response:
                     assert response.status_code == 200
                     response.read()
                     content = response.text

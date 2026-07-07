@@ -4,6 +4,7 @@
       <view class="hero-copy">
         <text class="eyebrow">灵山胜境智慧导览</text>
         <text class="hero-title">{{ scenicName }}</text>
+        <text class="guide-name">AI 导游 {{ guideName }}</text>
         <text class="hero-subtitle">{{ welcomeMessage }}</text>
         <view class="hero-actions">
           <view class="primary-cta" @tap="goToGuide">
@@ -86,11 +87,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getTouristHomeConfig } from '../../api/tourist'
+import { getActiveDigitalHumanConfig, getTouristHomeConfig } from '../../api/tourist'
 import type { ScenicSpot } from '../../types/api'
 
 const hotSpots = ref<ScenicSpot[]>([])
 const scenicName = ref('灵山胜境')
+const guideName = ref('灵灵')
 const welcomeMessage = ref('AI 数字人导游 · 智慧游览')
 const quickQuestions = ref<string[]>(['灵山大佛多高？', '门票多少钱？', '推荐游览路线', '附近有餐厅吗？'])
 
@@ -107,6 +109,14 @@ onMounted(async () => {
       { id: 2, spot_code: 'LSFG', name: '灵山梵宫', detail_intro: '以佛教艺术、建筑空间和文化展陈见长的代表性景点。', open_status: 'open' },
       { id: 3, spot_code: 'WYTC', name: '五印坛城', detail_intro: '藏式建筑风格鲜明，适合了解藏传佛教文化。', open_status: 'open' },
     ]
+  }
+
+  try {
+    const digitalHuman = await getActiveDigitalHumanConfig(1)
+    guideName.value = digitalHuman.name || guideName.value
+    welcomeMessage.value = digitalHuman.welcome_text || welcomeMessage.value
+  } catch {
+    // 首页仍可使用默认导游名展示，不阻塞游客进入其他功能。
   }
 })
 
@@ -168,6 +178,17 @@ function askQuickQuestion(question: string) {
   line-height: 1.08;
   font-weight: 800;
   color: #123f49;
+}
+
+.guide-name {
+  display: inline-flex;
+  margin-top: 12rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(35, 143, 163, 0.12);
+  color: #238fa3;
+  font-size: 23rpx;
+  font-weight: 800;
 }
 
 .hero-subtitle {

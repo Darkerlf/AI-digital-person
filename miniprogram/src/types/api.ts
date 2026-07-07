@@ -92,6 +92,18 @@ export interface TouristHomeConfig {
   }
 }
 
+export interface DigitalHumanConfig {
+  id: number
+  scenic_area_id?: number | null
+  name: string
+  avatar_url?: string | null
+  voice_style?: string | null
+  welcome_text?: string | null
+  default_mode?: string | null
+  config_json?: Record<string, unknown> | null
+  status: string
+}
+
 export interface MapGuideSpot {
   id: number
   name: string
@@ -181,6 +193,12 @@ export interface RouteRecommendResponse {
     stay_minutes?: number | null
     highlight?: string | null
   }>
+  duration_breakdown?: {
+    total_minutes: number
+    visit_minutes: number
+    walking_minutes: number
+    buffer_minutes: number
+  } | null
   match_reason?: string
   sources?: Array<Record<string, unknown>>
 }

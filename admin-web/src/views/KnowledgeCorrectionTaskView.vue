@@ -24,6 +24,15 @@
           </div>
         </li>
       </ul>
+      <p v-if="loadError" class="correction-task-message correction-task-message--error">{{ loadError }}</p>
+      <div v-else-if="!isLoading && tasks.length === 0" class="correction-task-empty">
+        <strong>暂无知识修正任务</strong>
+        <p>
+          当前没有待处理任务。知识修正任务通常从“会话管理”中的未命中问题创建，
+          也会在补充 FAQ 或知识文档并关联任务后变为已解决。
+        </p>
+      </div>
+      <p v-if="isLoading" class="correction-task-message">正在加载知识修正任务...</p>
     </section>
   </section>
 </template>
@@ -45,8 +54,12 @@ type CorrectionTask = {
 const tasks = ref<CorrectionTask[]>([])
 const statusFilter = ref('')
 const typeFilter = ref('')
+const isLoading = ref(false)
+const loadError = ref('')
 
 async function loadTasks() {
+  isLoading.value = true
+  loadError.value = ''
   const params: Record<string, string> = {}
   if (statusFilter.value) {
     params.status = statusFilter.value
@@ -54,10 +67,17 @@ async function loadTasks() {
   if (typeFilter.value) {
     params.correction_type = typeFilter.value
   }
-  const response = Object.keys(params).length
-    ? await apiClient.get('/knowledge/correction-tasks', { params })
-    : await apiClient.get('/knowledge/correction-tasks')
-  tasks.value = response.data.items
+  try {
+    const response = Object.keys(params).length
+      ? await apiClient.get('/knowledge/correction-tasks', { params })
+      : await apiClient.get('/knowledge/correction-tasks')
+    tasks.value = response.data.items
+  } catch {
+    tasks.value = []
+    loadError.value = '知识修正任务暂时无法加载，请稍后重试。'
+  } finally {
+    isLoading.value = false
+  }
 }
 
 onMounted(() => {
@@ -80,5 +100,33 @@ watch([statusFilter, typeFilter], () => {
   padding: 10px 12px;
   border: 1px solid #cbd5e1;
   border-radius: 12px;
+}
+
+.correction-task-empty,
+.correction-task-message {
+  margin: 0;
+  padding: 16px;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  line-height: 1.7;
+}
+
+.correction-task-empty strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #0f172a;
+}
+
+.correction-task-empty p {
+  margin: 0;
+}
+
+.correction-task-message--error {
+  color: #b42318;
+  background: #fff4ed;
+  border-style: solid;
+  border-color: #ffd6ae;
 }
 </style>

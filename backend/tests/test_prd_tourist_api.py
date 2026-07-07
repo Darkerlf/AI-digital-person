@@ -6,6 +6,8 @@ from app.models.conversation_session import ConversationSession
 from app.models.scenic_area import ScenicArea
 from app.models.scenic_spot import ScenicSpot
 from app.models.service_poi import ServicePOI
+from app.models.visitor import Visitor
+from app.core.security import create_access_token
 
 
 def _seed_prd_tourist_data(db):
@@ -88,6 +90,41 @@ def test_tourist_home_config_exposes_prd_entry_points(test_db_session):
     assert data["today_route"]["duration_minutes"] == 240
 
 
+def test_tourist_spot_family_narration_is_chinese_and_child_friendly(test_db_session):
+    _seed_prd_tourist_data(test_db_session)
+    client = TestClient(app)
+
+    response = client.get("/api/tourist/scenic-spots/1/narration?mode=family")
+
+    assert response.status_code == 200
+    narration = response.json()["narration"]
+    assert "Children" not in narration
+    assert "We can" not in narration
+    assert "灵山大佛" in narration
+    assert "小朋友" in narration
+    assert "找一找" in narration
+    assert "家长" in narration
+    assert "抬头" in narration
+    assert "莲花座" in narration
+
+
+def test_tourist_spot_family_narration_varies_by_spot(test_db_session):
+    _seed_prd_tourist_data(test_db_session)
+    client = TestClient(app)
+
+    buddha = client.get("/api/tourist/scenic-spots/1/narration?mode=family").json()["narration"]
+    palace = client.get("/api/tourist/scenic-spots/2/narration?mode=family").json()["narration"]
+    buddha_body = buddha.split("亲子讲解：", 1)[1]
+    palace_body = palace.split("亲子讲解：", 1)[1]
+
+    assert "小朋友可以把这里当成一个会讲故事的观察点" not in buddha
+    assert "小朋友可以把这里当成一个会讲故事的观察点" not in palace
+    assert "如果孩子问到文化含义" not in buddha
+    assert "如果孩子问到文化含义" not in palace
+    assert buddha_body.split("。")[0] != palace_body.split("。")[0]
+    assert buddha_body.rstrip("。").split("。")[-1] != palace_body.rstrip("。").split("。")[-1]
+
+
 def test_tourist_map_guide_supports_list_mode_without_location(test_db_session):
     _seed_prd_tourist_data(test_db_session)
     client = TestClient(app)
@@ -104,13 +141,22 @@ def test_tourist_map_guide_supports_list_mode_without_location(test_db_session):
 
 def test_tourist_recent_records_are_available_without_admin_auth(test_db_session):
     _seed_prd_tourist_data(test_db_session)
+    visitor = Visitor(openid="wx-prd-recent-records", nickname="记录游客")
+    test_db_session.add(visitor)
+    test_db_session.flush()
+    for session in test_db_session.query(ConversationSession).all():
+        session.visitor_id = str(visitor.id)
+    test_db_session.commit()
     client = TestClient(app)
 
-    response = client.get("/api/tourist/recent-records?visitor_id=visitor-001")
+    response = client.get(
+        "/api/tourist/recent-records",
+        headers={"Authorization": f"Bearer {create_access_token(f'visitor:{visitor.id}')}"},
+    )
 
     assert response.status_code == 200
     data = response.json()
-    assert data["items"][0]["visitor_id"] == "visitor-001"
+    assert data["items"][0]["visitor_id"] == str(visitor.id)
     assert data["items"][0]["messages"][0]["question_text"] == "灵山大佛多高？"
 
 

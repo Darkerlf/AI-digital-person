@@ -23,6 +23,14 @@ vi.mock('../api/client', () => ({
   },
 }))
 
+function mountLoginView() {
+  return mount(LoginView, {
+    global: {
+      plugins: [createPinia()],
+    },
+  })
+}
+
 describe('LoginView', () => {
   it('renders username and password inputs', () => {
     vi.stubGlobal('localStorage', {
@@ -31,14 +39,25 @@ describe('LoginView', () => {
       removeItem: vi.fn(),
     })
 
-    const wrapper = mount(LoginView, {
-      global: {
-        plugins: [createPinia()],
-      },
+    const wrapper = mountLoginView()
+
+    expect(wrapper.text()).toContain('后台登录')
+    expect(wrapper.find('input[autocomplete="username"]').exists()).toBe(true)
+    expect(wrapper.find('input[autocomplete="current-password"]').exists()).toBe(true)
+  })
+
+  it('renders the scenic branded login composition', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(() => ''),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
     })
 
-    expect(wrapper.text()).toContain('登录')
-    expect(wrapper.find('input').exists()).toBe(true)
+    const wrapper = mountLoginView()
+
+    expect(wrapper.find('.login-page').attributes('style')).toContain('--login-bg')
+    expect(wrapper.text()).toContain('灵山胜境')
+    expect(wrapper.text()).toContain('AI 数字人运营后台')
   })
 
   it('fetches profile and redirects to the role default page after login', async () => {
@@ -52,11 +71,7 @@ describe('LoginView', () => {
     postMock.mockClear()
     getMock.mockClear()
 
-    const wrapper = mount(LoginView, {
-      global: {
-        plugins: [createPinia()],
-      },
-    })
+    const wrapper = mountLoginView()
 
     const inputs = wrapper.findAll('input')
     await inputs[0].setValue('content_admin')

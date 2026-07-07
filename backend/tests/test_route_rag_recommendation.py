@@ -72,6 +72,43 @@ def test_route_rag_generates_structured_family_route(db_session):
     assert result["sources"][0]["title"] == "个性化游览路线推荐"
 
 
+def test_route_rag_estimates_varied_stay_minutes_by_spot_importance(db_session):
+    from app.services.route_rag_recommendation_service import RouteRAGRecommendationService
+
+    async def run():
+        route_text = (
+            "亲子家庭路线（4小时轻松游）\n"
+            "路线规划：南门入园→九龙灌浴（观赏动态表演）→佛手广场（摸天下第一掌）"
+            "→百子戏弥勒（亲子互动）→梵宫（欣赏艺术作品）→五印坛城（体验藏式文化）→出口\n"
+            "讲解重点：九龙灌浴表演适合亲子观看。"
+        )
+        service = RouteRAGRecommendationService(db_session)
+        llm_result = MagicMock()
+        llm_result.text = "推荐亲子家庭路线，节奏轻松。"
+
+        with patch.object(service.rag_pipeline, "retrieve", new_callable=AsyncMock, return_value=[
+            {"text": route_text, "title": "个性化游览路线推荐", "source": "knowledge_chunk", "score": 0.92}
+        ]):
+            with patch.object(service.rag_pipeline.llm_client, "generate", new_callable=AsyncMock, return_value=llm_result):
+                return await service.generate(
+                    RouteRecommendationRequest(
+                        scenic_area_id=1,
+                        interest_tags=["亲子"],
+                        audience_tags=["家庭"],
+                        duration_minutes=240,
+                        pace="relaxed",
+                    )
+                )
+
+    result = anyio.run(run)
+
+    stay_by_name = {spot["name"]: spot["stay_minutes"] for spot in result["spots"]}
+    assert len(set(stay_by_name.values())) >= 3
+    assert stay_by_name["九龙灌浴"] > stay_by_name["南门入园"]
+    assert stay_by_name["梵宫"] > stay_by_name["佛手广场"]
+    assert stay_by_name["出口"] < stay_by_name["五印坛城"]
+
+
 def test_route_rag_chat_answer_uses_knowledge_route(db_session):
     from app.services.route_rag_recommendation_service import RouteRAGRecommendationService
 
@@ -373,3 +410,37 @@ def test_route_rag_prefers_flexible_path_even_when_template_contains_requested_e
     spot_names = [spot["name"] for spot in adapted.spots]
     assert spot_names == ["灵山大照壁", "九龙灌浴", "祥符禅寺", "灵山大佛", "灵山梵宫", "五印坛城"]
     assert adapted.adapted_from_constraints is True
+
+
+def test_route_rag_response_includes_duration_breakdown(db_session):
+    from app.services.route_rag_recommendation_service import ParsedRoute, RouteRAGRecommendationService
+
+    service = RouteRAGRecommendationService(db_session)
+    parsed_route = ParsedRoute(
+        title="亲子家庭路线（4小时轻松游）",
+        plan_text="",
+        duration_minutes=240,
+        spots=[
+            {"scenic_spot_id": None, "name": "九龙灌浴", "stay_minutes": 40, "highlight": None},
+            {"scenic_spot_id": None, "name": "百子戏弥勒", "stay_minutes": 30, "highlight": None},
+            {"scenic_spot_id": None, "name": "灵山大佛", "stay_minutes": 50, "highlight": None},
+            {"scenic_spot_id": None, "name": "灵山梵宫", "stay_minutes": 45, "highlight": None},
+        ],
+    )
+
+    adapted = service._adapt_route_to_payload(
+        parsed_route,
+        RouteRecommendationRequest(
+            duration_minutes=180,
+            interest_tags=["亲子"],
+            audience_tags=["家庭"],
+            pace="relaxed",
+        ),
+    )
+    breakdown = service._build_duration_breakdown(adapted.spots, 180, pace="relaxed")
+
+    assert set(breakdown) == {"total_minutes", "visit_minutes", "walking_minutes", "buffer_minutes"}
+    assert breakdown["total_minutes"] == 180
+    assert breakdown["visit_minutes"] == sum(spot["stay_minutes"] for spot in adapted.spots)
+    assert breakdown["walking_minutes"] > 0
+    assert breakdown["buffer_minutes"] > 0

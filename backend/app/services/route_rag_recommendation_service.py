@@ -91,6 +91,27 @@ SCENIC_SPOT_HIGHLIGHTS = {
     "五印坛城": "藏传佛教文化展示节点，作为本次指定终点。",
 }
 
+SCENIC_SPOT_BASE_STAY_MINUTES = {
+    "南门入园": 8,
+    "出口": 6,
+    "出园": 6,
+    "灵山大照壁": 12,
+    "五明桥": 10,
+    "佛足坛": 18,
+    "五智门": 12,
+    "菩提大道": 15,
+    "九龙灌浴": 32,
+    "降魔浮雕": 15,
+    "阿育王柱": 12,
+    "百子戏弥勒": 22,
+    "祥符禅寺": 28,
+    "灵山大佛": 45,
+    "佛教文化博览馆": 28,
+    "灵山梵宫": 50,
+    "五印坛城": 35,
+    "佛手广场": 18,
+}
+
 FLEXIBLE_ROUTE_PRIORITY = {
     "history": ["九龙灌浴", "祥符禅寺", "灵山大佛", "灵山梵宫", "佛足坛", "五印坛城"],
     "nature": ["五明桥", "菩提大道", "九龙灌浴", "百子戏弥勒", "灵山大佛", "五印坛城"],
@@ -189,6 +210,11 @@ class RouteRAGRecommendationService:
                 }
                 for chunk in route_chunks[:5]
             ],
+            "duration_breakdown": self._build_duration_breakdown(
+                parsed_route.spots,
+                parsed_route.duration_minutes,
+                pace=payload.pace,
+            ),
         }
         self._record_generation(payload, result, message=message, history=history)
         return result
@@ -383,7 +409,6 @@ class RouteRAGRecommendationService:
         plan_text = plan_match.group(1).splitlines()[0].strip()
         stops = [item.strip() for item in re.split(r"\s*→\s*", plan_text) if item.strip()]
         duration_minutes = self._route_duration(title, 240)
-        stay_minutes = max(10, duration_minutes // max(len(stops), 1))
         spots = []
         for stop in stops:
             name, highlight = self._split_stop(stop)
@@ -391,7 +416,7 @@ class RouteRAGRecommendationService:
                 {
                     "scenic_spot_id": None,
                     "name": name,
-                    "stay_minutes": stay_minutes,
+                    "stay_minutes": self._base_stay_minutes(name),
                     "highlight": highlight,
                 }
             )
@@ -422,17 +447,7 @@ class RouteRAGRecommendationService:
             else:
                 selected_spots = context_spots[:max_stops]
 
-        if not duration_adjusted and not context_changed and not dynamic_route_used:
-            return parsed_route
-
-        stay_minutes = max(10, target_minutes // max(len(selected_spots), 1))
-        adjusted_spots = [
-            {
-                **spot,
-                "stay_minutes": stay_minutes,
-            }
-            for spot in selected_spots
-        ]
+        adjusted_spots = [dict(spot) for spot in selected_spots]
         if dynamic_route_used:
             title_base = f"{adjusted_spots[0]['name']}至{adjusted_spots[-1]['name']}灵活路线"
         else:
@@ -442,6 +457,11 @@ class RouteRAGRecommendationService:
             if duration_adjusted or dynamic_route_used
             else parsed_route.title
         )
+        adjusted_spots = self._redistribute_stay_minutes(
+            adjusted_spots,
+            total_minutes=target_minutes,
+            pace=payload.pace,
+        )
         return ParsedRoute(
             title=title,
             plan_text="→".join(spot["name"] for spot in adjusted_spots),
@@ -449,6 +469,93 @@ class RouteRAGRecommendationService:
             duration_minutes=target_minutes,
             adapted_from_constraints=dynamic_route_used,
         )
+
+    def _build_duration_breakdown(
+        self,
+        spots: list[dict],
+        total_minutes: int,
+        pace: str | None = None,
+    ) -> dict[str, int]:
+        walking_minutes = self._estimate_walking_minutes(spots, pace)
+        buffer_minutes = self._estimate_buffer_minutes(total_minutes, spots, pace)
+        visit_minutes = max(0, total_minutes - walking_minutes - buffer_minutes)
+        actual_visit_minutes = sum(int(spot.get("stay_minutes") or 0) for spot in spots)
+        if actual_visit_minutes > 0:
+            visit_minutes = actual_visit_minutes
+        return {
+            "total_minutes": total_minutes,
+            "visit_minutes": visit_minutes,
+            "walking_minutes": walking_minutes,
+            "buffer_minutes": max(0, total_minutes - visit_minutes - walking_minutes),
+        }
+
+    def _redistribute_stay_minutes(
+        self,
+        spots: list[dict],
+        *,
+        total_minutes: int,
+        pace: str | None = None,
+    ) -> list[dict]:
+        if not spots:
+            return spots
+        walking_minutes = self._estimate_walking_minutes(spots, pace)
+        buffer_minutes = self._estimate_buffer_minutes(total_minutes, spots, pace)
+        visit_budget = max(len(spots) * 10, total_minutes - walking_minutes - buffer_minutes)
+        base_minutes = [self._base_stay_minutes(str(spot.get("name") or "")) for spot in spots]
+        total_base = sum(base_minutes) or len(spots)
+        allocated = [
+            max(6, round(visit_budget * base_minute / total_base))
+            for base_minute in base_minutes
+        ]
+        delta = visit_budget - sum(allocated)
+        if delta:
+            ordered_indexes = sorted(
+                range(len(spots)),
+                key=lambda index: base_minutes[index],
+                reverse=delta > 0,
+            )
+            step = 1 if delta > 0 else -1
+            remaining = abs(delta)
+            cursor = 0
+            while remaining and ordered_indexes:
+                index = ordered_indexes[cursor % len(ordered_indexes)]
+                if step > 0 or allocated[index] > 6:
+                    allocated[index] += step
+                    remaining -= 1
+                cursor += 1
+        return [
+            {
+                **spot,
+                "stay_minutes": allocated[index],
+            }
+            for index, spot in enumerate(spots)
+        ]
+
+    @classmethod
+    def _base_stay_minutes(cls, name: str) -> int:
+        resolved_name = cls._resolve_scenic_spot_name(name) or name
+        for keyword, minutes in SCENIC_SPOT_BASE_STAY_MINUTES.items():
+            if keyword in resolved_name or keyword in name:
+                return minutes
+        return 20
+
+    @staticmethod
+    def _estimate_walking_minutes(spots: list[dict], pace: str | None = None) -> int:
+        transitions = max(0, len(spots) - 1)
+        per_leg = {
+            "fast": 6,
+            "standard": 8,
+            "normal": 8,
+            "relaxed": 10,
+        }.get(pace or "standard", 8)
+        return transitions * per_leg
+
+    @staticmethod
+    def _estimate_buffer_minutes(total_minutes: int, spots: list[dict], pace: str | None = None) -> int:
+        if total_minutes < 90 or len(spots) <= 1:
+            return 0
+        ratio = 0.12 if pace == "relaxed" else 0.08
+        return max(5, round(total_minutes * ratio))
 
     def _build_flexible_route_spots(
         self,

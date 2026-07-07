@@ -1,0 +1,202 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1280" viewBox="0 0 1800 1280" role="img" aria-labelledby="title desc">
+  <title id="title">数据库 ER 图</title>
+  <desc id="desc">景区导览服务 AI 数字人项目核心数据库实体关系图。</desc>
+  <defs>
+    <style>
+      .bg{fill:#f8fafc}.title{font:800 30px "Microsoft YaHei UI",sans-serif;fill:#0f172a}.sub{font:400 15px "Microsoft YaHei UI",sans-serif;fill:#475569}
+      .domain{fill:#fff;stroke:#cbd5e1;stroke-width:1.1}.dt{font:800 15px "Microsoft YaHei UI",sans-serif;fill:#334155}
+      .table{fill:#fff;stroke:#64748b;stroke-width:1.2}.head{fill:#e2e8f0}.master .head{fill:#dbeafe}.content .head{fill:#dcfce7}.knowledge .head{fill:#ecfdf5}.route .head{fill:#ffedd5}.ops .head{fill:#fce7f3}.auth .head{fill:#ffe4e6}
+      .name{font:800 14px "Consolas","Microsoft YaHei UI",monospace;fill:#0f172a}.field{font:400 11px "Consolas","Microsoft YaHei UI",monospace;fill:#334155}.pk{font:800 11px "Consolas","Microsoft YaHei UI",monospace;fill:#991b1b}.fk{font:700 11px "Consolas","Microsoft YaHei UI",monospace;fill:#1d4ed8}
+      .rel{stroke:#475569;stroke-width:1.35;fill:none;marker-end:url(#one-many)}.soft{stroke:#94a3b8;stroke-width:1.15;fill:none;marker-end:url(#one-many-soft);stroke-dasharray:5 5;opacity:.7}.label{font:700 11px "Microsoft YaHei UI",sans-serif;fill:#334155}
+    </style>
+    <marker id="one-many" viewBox="0 0 16 12" refX="15" refY="6" markerWidth="14" markerHeight="10" orient="auto">
+      <path d="M1 6 L15 1 M1 6 L15 6 M1 6 L15 11" stroke="#475569" stroke-width="1.4" fill="none"/>
+    </marker>
+    <marker id="one-many-soft" viewBox="0 0 16 12" refX="15" refY="6" markerWidth="14" markerHeight="10" orient="auto">
+      <path d="M1 6 L15 1 M1 6 L15 6 M1 6 L15 11" stroke="#94a3b8" stroke-width="1.4" fill="none"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="1800" height="1280"/>
+  <text class="title" x="50" y="42">数据库 ER 图</text>
+  <text class="sub" x="50" y="78">说明：红色 PK 为主键，蓝色 FK 为外键；箭头方向表示 1:N 中的 N 端。部分 JSON/大文本字段按核心用途简化展示。</text>
+
+  <rect class="domain" x="45" y="115" width="420" height="1010" rx="12"/>
+  <text class="dt" x="70" y="144">景区主数据域</text>
+  <rect class="domain" x="500" y="115" width="390" height="1010" rx="12"/>
+  <text class="dt" x="525" y="144">知识库与 AI 问答域</text>
+  <rect class="domain" x="925" y="115" width="390" height="1010" rx="12"/>
+  <text class="dt" x="950" y="144">路线导览域</text>
+  <rect class="domain" x="1350" y="115" width="405" height="1010" rx="12"/>
+  <text class="dt" x="1375" y="144">用户、运营与系统域</text>
+
+  <!-- table helper layout: rect + header + text -->
+  <g class="table master" transform="translate(80,175)">
+    <rect class="table" width="330" height="128" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">scenic_area</text>
+    <text class="pk" x="16" y="52">PK id</text>
+    <text class="field" x="16" y="72">code, name, description</text>
+    <text class="field" x="16" y="92">status</text>
+    <text class="field" x="16" y="112">created_at, updated_at</text>
+  </g>
+  <g class="table content" transform="translate(80,345)">
+    <rect class="table" width="330" height="164" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">scenic_spot</text>
+    <text class="pk" x="16" y="52">PK id</text><text class="fk" x="110" y="52">FK scenic_area_id</text>
+    <text class="field" x="16" y="72">spot_code, name, alias</text>
+    <text class="field" x="16" y="92">latitude, longitude, coordinate_source</text>
+    <text class="field" x="16" y="112">coordinate_verified, tencent_poi_id</text>
+    <text class="field" x="16" y="132">guide_text, detail_intro, highlights</text>
+    <text class="field" x="16" y="152">open_status, suggested_duration_minutes</text>
+  </g>
+  <g class="table content" transform="translate(80,550)">
+    <rect class="table" width="330" height="104" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">scenic_spot_tag</text>
+    <text class="pk" x="16" y="52">PK id</text><text class="fk" x="110" y="52">FK scenic_spot_id</text>
+    <text class="field" x="16" y="72">tag_name</text>
+    <text class="field" x="16" y="92">interest/audience/route tags</text>
+  </g>
+  <g class="table content" transform="translate(80,695)">
+    <rect class="table" width="330" height="128" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">service_poi</text>
+    <text class="pk" x="16" y="52">PK id</text><text class="fk" x="110" y="52">FK scenic_area_id?</text>
+    <text class="field" x="16" y="72">name, category, area_text</text>
+    <text class="field" x="16" y="92">open_hours, latitude, longitude</text>
+    <text class="field" x="16" y="112">description, status</text>
+  </g>
+  <g class="table content" transform="translate(80,865)">
+    <rect class="table" width="330" height="128" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">digital_human_config</text>
+    <text class="pk" x="16" y="52">PK id</text><text class="fk" x="110" y="52">FK scenic_area_id?</text>
+    <text class="field" x="16" y="72">name, avatar_url, voice_style</text>
+    <text class="field" x="16" y="92">welcome_text, default_mode</text>
+    <text class="field" x="16" y="112">config_json, status</text>
+  </g>
+
+  <g class="table knowledge" transform="translate(530,175)">
+    <rect class="table" width="330" height="140" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">knowledge_document</text>
+    <text class="pk" x="16" y="52">PK id</text><text class="fk" x="110" y="52">FK scenic_area_id</text>
+    <text class="field" x="16" y="72">title, doc_type, source_name</text>
+    <text class="field" x="16" y="92">source_path, content_text</text>
+    <text class="field" x="16" y="112">status, version, imported_at</text>
+    <text class="field" x="16" y="132">created_by</text>
+  </g>
+  <g class="table knowledge" transform="translate(530,360)">
+    <rect class="table" width="330" height="116" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">knowledge_chunk</text>
+    <text class="pk" x="16" y="52">PK id</text><text class="fk" x="110" y="52">FK document_id</text>
+    <text class="field" x="16" y="72">chunk_index, chunk_text</text>
+    <text class="field" x="16" y="92">token_count, source_section</text>
+    <text class="field" x="16" y="112">embedding_vector, status</text>
+  </g>
+  <g class="table knowledge" transform="translate(530,520)">
+    <rect class="table" width="330" height="116" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">faq_item</text>
+    <text class="pk" x="16" y="52">PK id</text><text class="fk" x="110" y="52">FK scenic_area_id</text>
+    <text class="field" x="16" y="72">question, answer</text>
+    <text class="field" x="16" y="92">category, priority, source</text>
+    <text class="field" x="16" y="112">status</text>
+  </g>
+  <g class="table knowledge" transform="translate(530,680)">
+    <rect class="table" width="330" height="176" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">knowledge_correction_task</text>
+    <text class="pk" x="16" y="52">PK id</text>
+    <text class="fk" x="16" y="72">FK source_message_id, session_id</text>
+    <text class="fk" x="16" y="92">FK scenic_area_id?, linked_faq_id?</text>
+    <text class="fk" x="16" y="112">FK linked_document_id?, created_by?, resolved_by?</text>
+    <text class="field" x="16" y="132">question_text, correction_type</text>
+    <text class="field" x="16" y="152">status, resolution_note</text>
+  </g>
+
+  <g class="table route" transform="translate(955,175)">
+    <rect class="table" width="330" height="152" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">route_template</text>
+    <text class="pk" x="16" y="52">PK id</text><text class="fk" x="110" y="52">FK scenic_area_id</text>
+    <text class="field" x="16" y="72">name, template_type, priority</text>
+    <text class="field" x="16" y="92">interest_tags_json</text>
+    <text class="field" x="16" y="112">audience_tags_json</text>
+    <text class="field" x="16" y="132">duration_min/max, summary, status</text>
+  </g>
+  <g class="table route" transform="translate(955,372)">
+    <rect class="table" width="330" height="116" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">route_template_spot</text>
+    <text class="pk" x="16" y="52">PK id</text>
+    <text class="fk" x="16" y="72">FK template_id, scenic_spot_id</text>
+    <text class="field" x="16" y="92">sort_order, stay_minutes</text>
+    <text class="field" x="16" y="112">highlight</text>
+  </g>
+  <g class="table route" transform="translate(955,535)">
+    <rect class="table" width="330" height="140" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">route_recommendation_record</text>
+    <text class="pk" x="16" y="52">PK id</text><text class="fk" x="110" y="52">FK scenic_area_id?</text>
+    <text class="field" x="16" y="72">visitor_id, session_id</text>
+    <text class="field" x="16" y="92">source, duration_minutes</text>
+    <text class="field" x="16" y="112">matched_template_id/name</text>
+    <text class="field" x="16" y="132">request_json, response_json</text>
+  </g>
+
+  <g class="table auth" transform="translate(1390,175)">
+    <rect class="table" width="330" height="128" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">admin_user</text>
+    <text class="pk" x="16" y="52">PK id</text>
+    <text class="field" x="16" y="72">username, password_hash</text>
+    <text class="field" x="16" y="92">role, status</text>
+    <text class="field" x="16" y="112">last_login_at</text>
+  </g>
+  <g class="table auth" transform="translate(1390,345)">
+    <rect class="table" width="330" height="116" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">visitor</text>
+    <text class="pk" x="16" y="52">PK id</text>
+    <text class="field" x="16" y="72">openid, nickname, avatar_url</text>
+    <text class="field" x="16" y="92">session_key, last_login_at</text>
+  </g>
+  <g class="table ops" transform="translate(1390,505)">
+    <rect class="table" width="330" height="128" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">conversation_session</text>
+    <text class="pk" x="16" y="52">PK id</text><text class="fk" x="110" y="52">FK scenic_area_id?</text>
+    <text class="field" x="16" y="72">session_key, channel</text>
+    <text class="field" x="16" y="92">visitor_id, status</text>
+    <text class="field" x="16" y="112">created_at, updated_at</text>
+  </g>
+  <g class="table ops" transform="translate(1390,675)">
+    <rect class="table" width="330" height="164" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">conversation_message</text>
+    <text class="pk" x="16" y="52">PK id</text><text class="fk" x="110" y="52">FK session_id</text>
+    <text class="field" x="16" y="72">question_text, recognized_text</text>
+    <text class="field" x="16" y="92">answer_text, matched_document_title</text>
+    <text class="field" x="16" y="112">latency_ms, feedback_status</text>
+    <text class="field" x="16" y="132">is_missed, resolution_status</text>
+    <text class="field" x="16" y="152">resolution_note</text>
+  </g>
+  <g class="table ops" transform="translate(1390,875)">
+    <rect class="table" width="330" height="116" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">feedback_record</text>
+    <text class="pk" x="16" y="52">PK id</text><text class="fk" x="110" y="52">FK scenic_area_id?</text>
+    <text class="field" x="16" y="72">source_type, source_id</text>
+    <text class="field" x="16" y="92">sentiment, score, content</text>
+  </g>
+  <g class="table ops" transform="translate(1390,1032)">
+    <rect class="table" width="330" height="132" rx="8"/><rect class="head" width="330" height="32" rx="8"/>
+    <text class="name" x="16" y="22">import / ops / stats</text>
+    <text class="field" x="16" y="52">import_job -> import_job_item</text>
+    <text class="field" x="16" y="72">operation_log -> admin_user?</text>
+    <text class="field" x="16" y="92">dashboard_stat_daily -> scenic_area?</text>
+    <text class="field" x="16" y="112">visitor_behavior_event -> scenic_area?</text>
+  </g>
+
+  <!-- relationships -->
+  <path class="rel" d="M410 240 C455 240 485 240 530 240"/><text class="label" x="435" y="230">area 1:N docs</text>
+  <path class="rel" d="M410 260 C665 260 770 240 955 240"/><text class="label" x="705" y="238">area 1:N templates</text>
+  <path class="rel" d="M245 303 C245 325 245 330 245 345"/><text class="label" x="260" y="330">1:N</text>
+  <path class="rel" d="M245 509 C245 530 245 535 245 550"/><text class="label" x="260" y="535">1:N</text>
+  <path class="rel" d="M80 240 C55 240 55 760 80 760"/><text class="label" x="58" y="675">area 1:N poi</text>
+  <path class="rel" d="M410 492 L455 492 L455 650 L918 650 L918 430 L955 430"/><text class="label" x="720" y="668">spot 1:N template_spot</text>
+  <path class="rel" d="M1120 327 C1120 350 1120 356 1120 372"/><text class="label" x="1134" y="354">1:N</text>
+  <path class="rel" d="M695 315 C695 338 695 344 695 360"/><text class="label" x="708" y="342">1:N</text>
+  <path class="rel" d="M860 580 C895 580 920 580 955 580"/><text class="label" x="885" y="568">faq/doc</text>
+  <path class="rel" d="M1555 633 C1555 652 1555 660 1555 675"/><text class="label" x="1570" y="660">1:N</text>
+  <path class="rel" d="M1390 725 C1180 735 1020 740 860 762"/><text class="label" x="1130" y="724">message 1:N correction</text>
+  <path class="soft" d="M1390 238 C1255 238 1200 820 860 768"/><text class="label" x="1120" y="806">admin creates/resolves</text>
+  <path class="soft" d="M410 282 C905 320 1200 520 1390 560"/><text class="label" x="1100" y="510">area 1:N sessions</text>
+  <path class="soft" d="M410 282 C890 330 1160 890 1390 925"/><text class="label" x="1120" y="912">area 1:N feedback</text>
+</svg>

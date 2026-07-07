@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="760" viewBox="0 0 1500 760" role="img" aria-labelledby="title desc">
+  <title id="title">核心业务闭环图</title>
+  <desc id="desc">游客体验、AI 回答、路线导览、后台运营和数据修正的业务闭环。</desc>
+  <defs>
+    <style>
+      .bg{fill:#f8fafc}.title{font:800 28px "Microsoft YaHei UI",sans-serif;fill:#0f172a}.sub{font:400 14px "Microsoft YaHei UI",sans-serif;fill:#475569}
+      .node{fill:#fff;stroke:#64748b;stroke-width:1.5}.a{fill:#eff6ff;stroke:#60a5fa}.b{fill:#ecfdf5;stroke:#34d399}.c{fill:#fff7ed;stroke:#fb923c}.d{fill:#fdf4ff;stroke:#d946ef}.e{fill:#fff1f2;stroke:#fb7185}
+      .h{font:800 17px "Microsoft YaHei UI",sans-serif;fill:#111827}.t{font:400 13px "Microsoft YaHei UI",sans-serif;fill:#334155}.m{font:600 11px Consolas,"Microsoft YaHei UI",monospace;fill:#334155}
+      .arrow{stroke:#475569;stroke-width:2;fill:none;marker-end:url(#a)}.soft{stroke:#94a3b8;stroke-width:1.5;fill:none;marker-end:url(#b)}.label{font:700 12px "Microsoft YaHei UI",sans-serif;fill:#334155}
+    </style>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#475569"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#94a3b8"/></marker>
+  </defs>
+  <rect class="bg" width="1500" height="760"/>
+  <text class="title" x="48" y="42">核心业务闭环图</text>
+  <text class="sub" x="48" y="76">真实上线关注点：游客现场体验、后台内容维护、AI 知识修正、路线反馈优化、地图坐标校准形成持续迭代。</text>
+
+  <g transform="translate(110,160)">
+    <rect class="node a" width="240" height="112" rx="16"/>
+    <text class="h" x="24" y="34">游客进入小程序</text>
+    <text class="t" x="24" y="64">登录授权、首页推荐</text>
+    <text class="m" x="24" y="90">index / guide / map / my</text>
+  </g>
+  <g transform="translate(455,115)">
+    <rect class="node d" width="260" height="112" rx="16"/>
+    <text class="h" x="24" y="34">AI 导游交互</text>
+    <text class="t" x="24" y="64">文字/语音提问，数字人播报</text>
+    <text class="m" x="24" y="90">ChatService + RAG + TTS/ASR</text>
+  </g>
+  <g transform="translate(805,160)">
+    <rect class="node b" width="260" height="112" rx="16"/>
+    <text class="h" x="24" y="34">地图与路线导览</text>
+    <text class="t" x="24" y="64">路线推荐、可走路线、偏航重算</text>
+    <text class="m" x="24" y="90">route / route-guide / map</text>
+  </g>
+  <g transform="translate(1150,300)">
+    <rect class="node c" width="250" height="112" rx="16"/>
+    <text class="h" x="24" y="34">游客反馈沉淀</text>
+    <text class="t" x="24" y="64">满意度、评分、路线体验</text>
+    <text class="m" x="24" y="90">feedback_record</text>
+  </g>
+  <g transform="translate(805,490)">
+    <rect class="node e" width="260" height="112" rx="16"/>
+    <text class="h" x="24" y="34">运营分析与修正</text>
+    <text class="t" x="24" y="64">会话未命中、感受度报告</text>
+    <text class="m" x="24" y="90">sessions / correction / dashboard</text>
+  </g>
+  <g transform="translate(455,535)">
+    <rect class="node b" width="260" height="112" rx="16"/>
+    <text class="h" x="24" y="34">后台内容维护</text>
+    <text class="t" x="24" y="64">景点、知识、FAQ、路线模板</text>
+    <text class="m" x="24" y="90">admin-web + management API</text>
+  </g>
+  <g transform="translate(110,490)">
+    <rect class="node c" width="240" height="112" rx="16"/>
+    <text class="h" x="24" y="34">数据质量校准</text>
+    <text class="t" x="24" y="64">坐标确认、导入数据、知识分块</text>
+    <text class="m" x="24" y="90">Tencent POI / ImportJob</text>
+  </g>
+
+  <path class="arrow" d="M350 205 C390 176 415 171 455 171"/><text class="label" x="374" y="170">提问/导览入口</text>
+  <path class="arrow" d="M715 171 C755 176 768 196 805 216"/><text class="label" x="728" y="166">推荐路线/景点</text>
+  <path class="arrow" d="M1065 240 C1110 270 1120 314 1150 346"/><text class="label" x="1080" y="292">体验结果</text>
+  <path class="arrow" d="M1150 356 C1110 470 1080 516 1065 546"/><text class="label" x="1100" y="486">反馈分析</text>
+  <path class="arrow" d="M805 546 C760 574 748 591 715 591"/><text class="label" x="728" y="568">修正任务</text>
+  <path class="arrow" d="M455 591 C410 576 392 548 350 546"/><text class="label" x="370" y="586">内容更新</text>
+  <path class="arrow" d="M230 490 C228 390 228 310 230 272"/><text class="label" x="140" y="390">质量提升</text>
+
+  <path class="soft" d="M585 535 C585 435 585 290 585 227"/><text class="label" x="600" y="390">知识库更新后重进 RAG</text>
+  <path class="soft" d="M350 540 C510 474 690 390 805 236"/><text class="label" x="480" y="420">坐标支撑路线与地图</text>
+  <path class="soft" d="M935 490 C935 420 935 330 935 272"/><text class="label" x="950" y="392">路线反馈优化模板</text>
+</svg>

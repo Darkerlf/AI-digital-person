@@ -40,7 +40,7 @@ assert.match(guideVue, /dhLiveGuideUrl/, 'AI guide page should use the configure
 assert.match(guideVue, /API_BASE_URL/, 'AI guide page should pass its configured backend URL to the hosted DH_live page')
 assert.match(guideVue, /api=\$\{encodeURIComponent\(API_BASE_URL\)\}/, 'hosted DH_live page should receive an explicit backend URL')
 assert.match(guideVue, /setTimeout\(handleTimeout/, 'AI guide page should stop showing an endless loading card when web-view cannot open')
-assert.equal(/DigitalHuman/.test(guideVue), false, 'AI guide page should not render the static layered digital human')
+assert.equal(/<DigitalHuman\b|components:\s*\{[\s\S]*DigitalHuman|from ['"]\.\.\/\.\.\/components\/DigitalHuman\.vue['"]/.test(guideVue), false, 'AI guide page should not render the static layered digital human')
 assert.equal(/avatar-safe-zone/.test(guideVue), false, 'AI guide page should remove the old static avatar area')
 assert.equal(/avatar-glow/.test(guideVue), false, 'AI guide avatar glow layer should be removed to avoid white ghosting')
 assert.match(digitalHumanVue, /showMouthLayer/, 'digital human should gate the mouth overlay')

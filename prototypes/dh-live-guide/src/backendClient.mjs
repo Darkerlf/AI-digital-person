@@ -1,5 +1,8 @@
-export function createBackendClient(baseUrl, fetchImpl = fetch) {
+export function createBackendClient(baseUrl, options = fetch) {
   const baseUrls = Array.isArray(baseUrl) ? baseUrl : [baseUrl]
+  const fetchImpl = typeof options === 'function' ? options : options.fetchImpl || fetch
+  const authToken = typeof options === 'function' ? '' : options.authToken || ''
+  const digitalHumanVoice = typeof options === 'function' ? 'loongbella_v3' : options.digitalHumanVoice || 'loongbella_v3'
 
   return {
     async *streamAnswer(payload, signal, onMeta) {
@@ -9,7 +12,9 @@ export function createBackendClient(baseUrl, fetchImpl = fetch) {
         payload,
         signal,
         fetchImpl,
+        authToken,
       )
+      if (response.status === 401 || response.status === 403) throw new Error('请先登录后再使用 AI 导游')
       if (!response.ok || !response.body) throw new Error('对话服务暂不可用')
 
       const reader = response.body.getReader()
@@ -43,9 +48,10 @@ export function createBackendClient(baseUrl, fetchImpl = fetch) {
       const response = await postWithFallback(
         baseUrls,
         '/tourist/voice/avatar-tts',
-        { text, voice: 'loongbella_v3' },
+        { text, voice: digitalHumanVoice },
         signal,
         fetchImpl,
+        authToken,
       )
       if (!response.ok) throw new Error('语音生成失败')
       return new Uint8Array(await response.arrayBuffer())
@@ -58,6 +64,7 @@ export function createBackendClient(baseUrl, fetchImpl = fetch) {
         payload,
         signal,
         fetchImpl,
+        authToken,
       )
       if (!response.ok) throw new Error('评价提交失败，请稍后重试')
       return response.json()
@@ -80,14 +87,16 @@ export function createBackendClient(baseUrl, fetchImpl = fetch) {
   }
 }
 
-async function postWithFallback(baseUrls, path, payload, signal, fetchImpl) {
+async function postWithFallback(baseUrls, path, payload, signal, fetchImpl, authToken = '') {
   let lastResponse = null
   let lastError = null
+  const headers = { 'Content-Type': 'application/json' }
+  if (authToken) headers.Authorization = `Bearer ${authToken}`
   for (const baseUrl of baseUrls) {
     try {
       const response = await fetchImpl(`${baseUrl}${path}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload),
         signal,
       })

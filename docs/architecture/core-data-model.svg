@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="920" viewBox="0 0 1500 920" role="img" aria-labelledby="title desc">
+  <title id="title">核心数据模型图</title>
+  <desc id="desc">景区导览服务 AI 数字人项目核心数据实体与关系。</desc>
+  <defs>
+    <style>
+      .bg{fill:#f8fafc}.title{font:800 28px "Microsoft YaHei UI",sans-serif;fill:#0f172a}.sub{font:400 14px "Microsoft YaHei UI",sans-serif;fill:#475569}
+      .e{fill:#fff;stroke:#64748b;stroke-width:1.3}.main{fill:#eff6ff;stroke:#3b82f6}.know{fill:#ecfdf5;stroke:#10b981}.route{fill:#fff7ed;stroke:#f97316}.ops{fill:#fdf4ff;stroke:#d946ef}.auth{fill:#fff1f2;stroke:#f43f5e}
+      .h{font:800 15px "Microsoft YaHei UI",sans-serif;fill:#111827}.m{font:600 11px Consolas,"Microsoft YaHei UI",monospace;fill:#334155}.t{font:400 12px "Microsoft YaHei UI",sans-serif;fill:#334155}
+      .rel{stroke:#475569;stroke-width:1.4;fill:none;marker-end:url(#a)}.soft{stroke:#94a3b8;stroke-width:1.1;fill:none;marker-end:url(#b)}
+      .label{font:700 11px "Microsoft YaHei UI",sans-serif;fill:#334155}
+    </style>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#475569"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#94a3b8"/></marker>
+  </defs>
+  <rect class="bg" width="1500" height="920"/>
+  <text class="title" x="48" y="42">核心数据模型图</text>
+  <text class="sub" x="48" y="76">用于理解数据库主表、领域边界和功能模块之间的数据依赖。</text>
+
+  <g transform="translate(610,125)">
+    <rect class="e main" width="280" height="102" rx="8"/>
+    <text class="h" x="18" y="26">scenic_area</text>
+    <text class="m" x="18" y="52">id, code, name, description</text>
+    <text class="t" x="18" y="78">景区主数据，连接景点、知识、路线、报表</text>
+  </g>
+
+  <g transform="translate(130,285)">
+    <rect class="e main" width="260" height="112" rx="8"/>
+    <text class="h" x="18" y="26">scenic_spot</text>
+    <text class="m" x="18" y="52">spot_code, name, lat/lng</text>
+    <text class="m" x="18" y="74">guide_text, intro, tags</text>
+    <text class="t" x="18" y="98">景点详情、讲解、地图与路线核心数据</text>
+  </g>
+
+  <g transform="translate(130,465)">
+    <rect class="e main" width="260" height="92" rx="8"/>
+    <text class="h" x="18" y="26">service_poi</text>
+    <text class="m" x="18" y="52">name, category, area_text</text>
+    <text class="m" x="18" y="74">open_hours, lat/lng</text>
+  </g>
+
+  <g transform="translate(130,625)">
+    <rect class="e main" width="260" height="92" rx="8"/>
+    <text class="h" x="18" y="26">scenic_spot_tag</text>
+    <text class="m" x="18" y="52">scenic_spot_id, tag</text>
+    <text class="t" x="18" y="76">路线推荐与兴趣匹配标签</text>
+  </g>
+
+  <g transform="translate(455,285)">
+    <rect class="e know" width="260" height="112" rx="8"/>
+    <text class="h" x="18" y="26">knowledge_document</text>
+    <text class="m" x="18" y="52">title, doc_type, source_name</text>
+    <text class="m" x="18" y="74">content_text, status</text>
+    <text class="t" x="18" y="98">AI 导游知识库原始文档</text>
+  </g>
+
+  <g transform="translate(455,465)">
+    <rect class="e know" width="260" height="92" rx="8"/>
+    <text class="h" x="18" y="26">knowledge_chunk</text>
+    <text class="m" x="18" y="52">document_id, chunk_text</text>
+    <text class="m" x="18" y="74">embedding_vector</text>
+  </g>
+
+  <g transform="translate(455,625)">
+    <rect class="e know" width="260" height="92" rx="8"/>
+    <text class="h" x="18" y="26">faq_item</text>
+    <text class="m" x="18" y="52">question, answer, category</text>
+    <text class="m" x="18" y="74">priority, scenic_area_id</text>
+  </g>
+
+  <g transform="translate(785,285)">
+    <rect class="e route" width="260" height="112" rx="8"/>
+    <text class="h" x="18" y="26">route_template</text>
+    <text class="m" x="18" y="52">name, template_type, priority</text>
+    <text class="m" x="18" y="74">interest_tags, audience_tags</text>
+    <text class="t" x="18" y="98">官方路线模板与推荐规则</text>
+  </g>
+
+  <g transform="translate(785,465)">
+    <rect class="e route" width="260" height="92" rx="8"/>
+    <text class="h" x="18" y="26">route_template_spot</text>
+    <text class="m" x="18" y="52">template_id, scenic_spot_id</text>
+    <text class="m" x="18" y="74">sort_order, stay_minutes</text>
+  </g>
+
+  <g transform="translate(785,625)">
+    <rect class="e route" width="260" height="92" rx="8"/>
+    <text class="h" x="18" y="26">route_recommendation_record</text>
+    <text class="m" x="18" y="52">request_json, response_json</text>
+    <text class="m" x="18" y="74">fallback_used, scenic_area_id</text>
+  </g>
+
+  <g transform="translate(1115,220)">
+    <rect class="e auth" width="260" height="92" rx="8"/>
+    <text class="h" x="18" y="26">admin_user</text>
+    <text class="m" x="18" y="52">username, password_hash</text>
+    <text class="m" x="18" y="74">role, status</text>
+  </g>
+
+  <g transform="translate(1115,350)">
+    <rect class="e auth" width="260" height="92" rx="8"/>
+    <text class="h" x="18" y="26">visitor</text>
+    <text class="m" x="18" y="52">openid, nickname, avatar_url</text>
+    <text class="t" x="18" y="76">游客登录和资料</text>
+  </g>
+
+  <g transform="translate(1115,480)">
+    <rect class="e ops" width="260" height="112" rx="8"/>
+    <text class="h" x="18" y="26">conversation_session / message</text>
+    <text class="m" x="18" y="52">session_key, channel, status</text>
+    <text class="m" x="18" y="74">question_text, answer_text</text>
+    <text class="t" x="18" y="98">AI 会话记录与未命中分析</text>
+  </g>
+
+  <g transform="translate(1115,650)">
+    <rect class="e ops" width="260" height="112" rx="8"/>
+    <text class="h" x="18" y="26">feedback / correction / logs</text>
+    <text class="m" x="18" y="52">feedback_record</text>
+    <text class="m" x="18" y="74">knowledge_correction_task</text>
+    <text class="m" x="18" y="96">operation_log, import_job</text>
+  </g>
+
+  <path class="rel" d="M610 176 C500 176 360 260 300 285"/><text class="label" x="420" y="220">1:N</text>
+  <path class="rel" d="M610 186 C530 240 520 266 520 285"/><text class="label" x="540" y="250">1:N</text>
+  <path class="rel" d="M750 227 C810 250 850 270 850 285"/><text class="label" x="800" y="250">1:N</text>
+  <path class="rel" d="M610 200 C360 270 300 442 260 465"/><text class="label" x="340" y="420">1:N</text>
+  <path class="rel" d="M260 397 C260 450 260 592 260 625"/><text class="label" x="272" y="582">1:N</text>
+  <path class="rel" d="M585 397 C585 430 585 450 585 465"/><text class="label" x="596" y="437">1:N</text>
+  <path class="rel" d="M585 227 C585 410 585 590 585 625"/><text class="label" x="598" y="595">1:N</text>
+  <path class="rel" d="M915 397 C915 430 915 450 915 465"/><text class="label" x="928" y="437">1:N</text>
+  <path class="rel" d="M785 511 C620 510 410 395 300 397"/><text class="label" x="520" y="486">N:1 spot</text>
+  <path class="rel" d="M915 557 C915 590 915 610 915 625"/>
+  <path class="soft" d="M890 176 C1020 176 1110 260 1160 350"/><text class="label" x="1060" y="260">visitor</text>
+  <path class="soft" d="M1245 442 C1245 456 1245 466 1245 480"/>
+  <path class="soft" d="M1245 592 C1245 616 1245 636 1245 650"/>
+  <path class="soft" d="M715 671 C860 750 1000 744 1115 706"/><text class="label" x="875" y="742">未命中修正</text>
+</svg>

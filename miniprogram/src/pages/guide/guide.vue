@@ -10,6 +10,9 @@
         <view v-if="failed" class="retry-btn" @tap="reloadGuide">
           <text>重新加载</text>
         </view>
+        <view v-if="loginRequired" class="login-btn" @tap="goToLogin">
+          <text>去登陆</text>
+        </view>
       </view>
     </view>
 
@@ -28,37 +31,41 @@
 import { onShow } from '@dcloudio/uni-app'
 import { computed, onUnmounted, ref } from 'vue'
 import { API_BASE_URL } from '../../api/request'
+import { getActiveDigitalHumanConfig } from '../../api/tourist'
 import { dhLiveGuideUrl } from '../../config/assets'
+import { isAuthenticatedFromStorage, LOGIN_PAGE_URL } from '../../utils/authGuard'
 import { isSafeDhLiveWebViewUrl, webViewBlockedReason } from '../../utils/dhLiveWebView.js'
 
-const url = ref(buildGuideUrl())
+const digitalHumanName = ref('灵山胜境 AI 导游')
+const digitalHumanWelcomeText = ref('马上为您加载语音、表情和口型同步的数字人讲解体验。')
+const digitalHumanVoice = ref('')
+const url = ref('')
 const loaded = ref(false)
-const canOpenWebView = ref(isSafeDhLiveWebViewUrl(url.value))
-const failed = ref(!canOpenWebView.value)
-const fallbackTitle = computed(() => (failed.value ? '动态导游暂时无法打开' : '正在进入动态导游'))
+const canOpenWebView = ref(false)
+const failed = ref(false)
+const loginRequired = ref(false)
+const fallbackTitle = computed(() => {
+  if (loginRequired.value) return '请先登录后使用 AI 导游'
+  return failed.value ? '动态导游暂时无法打开' : '正在进入动态导游'
+})
 const fallbackCopy = computed(() => {
-  if (!failed.value) return '马上为您加载语音、表情和口型同步的数字人讲解体验。'
+  if (loginRequired.value) return '登录后即可使用灵灵的智能问答、语音讲解和数字人导览服务。'
+  if (!failed.value) return digitalHumanWelcomeText.value
   return webViewBlockedReason(url.value) || '请确认 DH_live 服务已启动，或稍后重新进入。'
 })
 let loadTimer: ReturnType<typeof setTimeout> | undefined
+let currentQuestion = ''
+let currentAutoSubmit = false
 
-if (canOpenWebView.value) {
-  startLoadTimeout()
-}
+void initializeGuide()
 
 onShow(() => {
   const pending = uni.getStorageSync('pending_question')
   if (pending && typeof pending === 'string') {
     uni.removeStorageSync('pending_question')
-    url.value = buildGuideUrl(pending, true)
-    canOpenWebView.value = isSafeDhLiveWebViewUrl(url.value)
-    loaded.value = false
-    failed.value = !canOpenWebView.value
-    if (canOpenWebView.value) {
-      startLoadTimeout()
-    } else {
-      showBlockedReason()
-    }
+    currentQuestion = pending
+    currentAutoSubmit = true
+    resetGuideUrl(currentQuestion, currentAutoSubmit)
   }
 })
 
@@ -67,9 +74,60 @@ onUnmounted(clearLoadTimeout)
 function buildGuideUrl(question = '', auto = false) {
   const separator = dhLiveGuideUrl.includes('?') ? '&' : '?'
   const params = [`source=mini-guide`, `v=${Date.now()}`, `api=${encodeURIComponent(API_BASE_URL)}`]
+  const token = String(uni.getStorageSync('token') || '').trim()
+  if (token) params.push(`auth=${encodeURIComponent(token)}`)
+  params.push(`guide_name=${encodeURIComponent(digitalHumanName.value)}`)
+  params.push(`welcome_text=${encodeURIComponent(digitalHumanWelcomeText.value)}`)
+  if (digitalHumanVoice.value) params.push(`voice=${encodeURIComponent(digitalHumanVoice.value)}`)
   if (question) params.push(`question=${encodeURIComponent(question)}`)
   if (auto) params.push('auto=1')
   return `${dhLiveGuideUrl}${separator}${params.join('&')}`
+}
+
+async function initializeGuide() {
+  if (!ensureLoggedInForGuide()) return
+  await loadDigitalHumanConfig()
+  resetGuideUrl(currentQuestion, currentAutoSubmit)
+}
+
+async function loadDigitalHumanConfig() {
+  try {
+    const config = await getActiveDigitalHumanConfig(1)
+    digitalHumanName.value = config.name || digitalHumanName.value
+    digitalHumanWelcomeText.value = config.welcome_text || digitalHumanWelcomeText.value
+    digitalHumanVoice.value = config.voice_style || digitalHumanVoice.value
+  } catch (error) {
+    console.warn('Failed to load active digital human config:', error)
+  }
+}
+
+function resetGuideUrl(question = '', auto = false) {
+  clearLoadTimeout()
+  if (!ensureLoggedInForGuide()) return
+  url.value = buildGuideUrl(question, auto)
+  canOpenWebView.value = isSafeDhLiveWebViewUrl(url.value)
+  loaded.value = false
+  failed.value = !canOpenWebView.value
+  if (canOpenWebView.value) {
+    startLoadTimeout()
+    ensureMicrophonePermission()
+  } else {
+    showBlockedReason()
+  }
+}
+
+function ensureLoggedInForGuide() {
+  if (isAuthenticatedFromStorage()) {
+    loginRequired.value = false
+    return true
+  }
+  clearLoadTimeout()
+  url.value = ''
+  canOpenWebView.value = false
+  loaded.value = false
+  failed.value = false
+  loginRequired.value = true
+  return false
 }
 
 function handleLoad() {
@@ -93,15 +151,44 @@ function handleError() {
 }
 
 function reloadGuide() {
-  url.value = buildGuideUrl()
-  canOpenWebView.value = isSafeDhLiveWebViewUrl(url.value)
-  loaded.value = false
-  failed.value = !canOpenWebView.value
-  if (canOpenWebView.value) {
-    startLoadTimeout()
-  } else {
-    showBlockedReason()
-  }
+  currentQuestion = ''
+  currentAutoSubmit = false
+  resetGuideUrl()
+}
+
+function goToLogin() {
+  uni.switchTab({ url: LOGIN_PAGE_URL })
+}
+
+function ensureMicrophonePermission() {
+  uni.getSetting({
+    success: (result) => {
+      const allowed = result.authSetting['scope.record']
+      if (allowed === true) return
+      if (allowed === false) {
+        showMicrophoneSettingsPrompt()
+        return
+      }
+      uni.authorize({
+        scope: 'scope.record',
+        fail: showMicrophoneSettingsPrompt,
+      })
+    },
+  })
+}
+
+function showMicrophoneSettingsPrompt() {
+  uni.showModal({
+    title: '需要麦克风权限',
+    content: '语音输入需要使用麦克风。请在设置中允许麦克风权限后重试。',
+    confirmText: '去设置',
+    cancelText: '暂不',
+    success: (result) => {
+      if (result.confirm) {
+        uni.openSetting()
+      }
+    },
+  })
 }
 
 function startLoadTimeout() {
@@ -208,7 +295,18 @@ function showBlockedReason() {
   background: #238fa3;
 }
 
-.retry-btn text {
+.login-btn {
+  height: 76rpx;
+  margin-top: 18rpx;
+  border-radius: 999rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #238fa3;
+}
+
+.retry-btn text,
+.login-btn text {
   color: #ffffff;
   font-size: 27rpx;
   font-weight: 800;

@@ -29,7 +29,7 @@
               <strong>{{ item.question_text }}</strong>
               <p>识别文本：{{ item.recognized_text ?? '无' }}</p>
               <p>回答：{{ item.answer_text ?? '无回答' }}</p>
-              <p>命中文档：{{ item.matched_document_title ?? '未命中' }}</p>
+              <p>命中文档：{{ hitLabel(item) }}</p>
               <p>耗时：{{ item.latency_ms ?? '-' }} ms · 反馈：{{ item.feedback_status ?? '未反馈' }}</p>
             </div>
           </li>
@@ -96,6 +96,7 @@ type SessionMessage = {
   matched_document_title: string | null
   latency_ms: number | null
   feedback_status: string | null
+  is_missed: boolean
 }
 
 type SessionDetail = {
@@ -164,6 +165,13 @@ async function selectSession(sessionId: number) {
   selectedSession.id = response.data.id
   selectedSession.session_key = response.data.session_key
   selectedSession.messages = response.data.messages
+}
+
+function hitLabel(item: SessionMessage) {
+  if (item.matched_document_title) {
+    return item.matched_document_title
+  }
+  return item.is_missed ? '未命中' : '无需知识命中'
 }
 
 async function resolveMessage(messageId: number) {

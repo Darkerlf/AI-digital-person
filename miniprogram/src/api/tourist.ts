@@ -2,12 +2,9 @@ import { API_BASE_URL, request } from './request'
 import type {
   ChatRequest,
   ChatResponse,
-  ScenicArea,
   ScenicSpot,
   ScenicSpotNarration,
   ServicePOI,
-  Session,
-  ConversationTurn,
   RouteRecommendRequest,
   RouteRecommendResponse,
   WalkGuideRequest,
@@ -20,14 +17,15 @@ import type {
   UpdateProfileRequest,
   FeedbackRequest,
   FeedbackResponse,
+  DigitalHumanConfig,
 } from '../types/api'
-
-export function getScenicAreas() {
-  return request<{ items: ScenicArea[] }>('/scenic-areas')
-}
 
 export function getTouristHomeConfig(scenicAreaId = 1) {
   return request<TouristHomeConfig>(`/tourist/home?scenic_area_id=${scenicAreaId}`)
+}
+
+export function getActiveDigitalHumanConfig(scenicAreaId = 1) {
+  return request<DigitalHumanConfig>(`/digital-humans/active?scenic_area_id=${scenicAreaId}`)
 }
 
 export function getScenicSpots() {
@@ -47,14 +45,6 @@ export function sendChat(data: ChatRequest) {
     method: 'POST',
     data,
   })
-}
-
-export function getSessions() {
-  return request<{ items: Session[] }>('/sessions')
-}
-
-export function getSessionDetail(id: number) {
-  return request<{ session: Session; messages: ConversationTurn[] }>(`/sessions/${id}`)
 }
 
 export function recommendRoute(data: RouteRecommendRequest) {
@@ -82,9 +72,8 @@ export function getServicePois(category?: string) {
   return request<{ items: ServicePOI[] }>(`/tourist/service-pois${query}`)
 }
 
-export function getRecentRecords(visitorId?: string | null) {
-  const query = visitorId ? `?visitor_id=${encodeURIComponent(visitorId)}` : ''
-  return request<{ items: RecentRecord[] }>(`/tourist/recent-records${query}`)
+export function getRecentRecords() {
+  return request<{ items: RecentRecord[] }>('/tourist/recent-records')
 }
 
 export function wxLogin(data: WxLoginRequest) {

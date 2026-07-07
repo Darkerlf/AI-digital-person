@@ -3,7 +3,12 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import require_content_roles
 from app.core.database import get_db
-from app.schemas.knowledge import KnowledgeDocumentCreate, KnowledgeDocumentRead, KnowledgeDocumentUpdate
+from app.schemas.knowledge import (
+    KnowledgeChunkRead,
+    KnowledgeDocumentCreate,
+    KnowledgeDocumentRead,
+    KnowledgeDocumentUpdate,
+)
 from app.services.knowledge_service import KnowledgeService
 
 router = APIRouter(prefix="/knowledge/documents", tags=["knowledge-documents"])
@@ -54,4 +59,9 @@ def delete_document(
 
 @router.get("/{document_id}/chunks")
 def list_chunks(document_id: int, _: object = Depends(require_content_roles), db: Session = Depends(get_db)):
-    return {"items": KnowledgeService(db).list_chunks(document_id)}
+    return {
+        "items": [
+            KnowledgeChunkRead.model_validate(chunk).model_dump()
+            for chunk in KnowledgeService(db).list_chunks(document_id)
+        ]
+    }

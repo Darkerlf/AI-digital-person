@@ -1,14 +1,13 @@
 from fastapi import APIRouter, Depends, File as FastAPIFile, HTTPException, UploadFile, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.api.deps import get_current_visitor
 from app.services.visitor_service import VisitorService
 from app.utils.object_storage import get_object_storage
 
 router = APIRouter(prefix="/tourist", tags=["tourist"])
-bearer_scheme = HTTPBearer(auto_error=False)
 ALLOWED_AVATAR_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_AVATAR_BYTES = 2 * 1024 * 1024
 
@@ -43,18 +42,6 @@ class ProfileResponse(BaseModel):
     avatar_url: str
 
 
-def _get_current_visitor(
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
-    db: Session = Depends(get_db),
-):
-    if credentials is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
-    visitor = VisitorService(db).get_visitor_by_token(credentials.credentials)
-    if visitor is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid visitor token")
-    return visitor
-
-
 @router.post("/wx-login", response_model=WxLoginResponse)
 async def wx_login(payload: WxLoginRequest, db: Session = Depends(get_db)):
     service = VisitorService(db)
@@ -70,7 +57,7 @@ async def wx_login(payload: WxLoginRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/profile", response_model=ProfileResponse)
-def get_profile(visitor=Depends(_get_current_visitor)):
+def get_profile(visitor=Depends(get_current_visitor)):
     return ProfileResponse(
         visitor_id=visitor.id,
         nickname=visitor.nickname or "",
@@ -79,7 +66,7 @@ def get_profile(visitor=Depends(_get_current_visitor)):
 
 
 @router.put("/profile", response_model=ProfileResponse)
-def update_profile(payload: UpdateProfileRequest, visitor=Depends(_get_current_visitor), db: Session = Depends(get_db)):
+def update_profile(payload: UpdateProfileRequest, visitor=Depends(get_current_visitor), db: Session = Depends(get_db)):
     service = VisitorService(db)
     try:
         updated = service.update_profile(visitor.id, nickname=payload.nickname, avatar_url=payload.avatar_url)
@@ -95,7 +82,7 @@ def update_profile(payload: UpdateProfileRequest, visitor=Depends(_get_current_v
 @router.post("/profile/avatar", response_model=ProfileResponse)
 async def upload_avatar(
     avatar: UploadFile = FastAPIFile(...),
-    visitor=Depends(_get_current_visitor),
+    visitor=Depends(get_current_visitor),
     db: Session = Depends(get_db),
 ):
     content_type = avatar.content_type or ""

@@ -16,6 +16,9 @@
     "permission": {
       "scope.userLocation": {
         "desc": "你的位置信息将用于地图导览中显示当前位置"
+      },
+      "scope.record": {
+        "desc": "你的麦克风将用于 AI 导游语音输入和语音识别"
       }
     },
     "requiredPrivateInfos": [

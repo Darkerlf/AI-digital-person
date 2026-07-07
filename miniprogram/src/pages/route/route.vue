@@ -46,8 +46,32 @@
         <text class="hint">可留空</text>
       </view>
       <view class="field-stack">
-        <input v-model="startSpotName" class="text-input" placeholder="从哪里出发，如南门入口" />
-        <input v-model="endSpotName" class="text-input" placeholder="希望在哪里结束，如出口/停车场" />
+        <view class="endpoint-field">
+          <input v-model="startSpotName" class="text-input" placeholder="从哪里出发，如灵山大照壁" />
+          <view v-if="startSpotSuggestions.length" class="suggestion-list">
+            <view
+              v-for="spot in startSpotSuggestions"
+              :key="`start-${spot.id}`"
+              class="suggestion-item"
+              @tap="selectStartSpot(spot)"
+            >
+              <text>{{ spot.name }}</text>
+            </view>
+          </view>
+        </view>
+        <view class="endpoint-field">
+          <input v-model="endSpotName" class="text-input" placeholder="希望在哪里结束，如五印坛城" />
+          <view v-if="endSpotSuggestions.length" class="suggestion-list">
+            <view
+              v-for="spot in endSpotSuggestions"
+              :key="`end-${spot.id}`"
+              class="suggestion-item"
+              @tap="selectEndSpot(spot)"
+            >
+              <text>{{ spot.name }}</text>
+            </view>
+          </view>
+        </view>
         <view v-if="rerouteFromSpotName" class="reroute-note">
           <text>将从 {{ rerouteFromSpotName }} 继续规划</text>
         </view>
@@ -131,6 +155,24 @@
         <text class="route-name">{{ routeResult.matched_template?.name || routeResult.template_name || '推荐路线' }}</text>
         <text class="route-summary">{{ routeResult.summary || routeResult.match_reason }}</text>
       </view>
+      <view v-if="routeResult.duration_breakdown" class="duration-breakdown">
+        <view class="duration-item">
+          <text class="duration-value">{{ routeResult.duration_breakdown.total_minutes }}分钟</text>
+          <text class="duration-label">总时长</text>
+        </view>
+        <view class="duration-item">
+          <text class="duration-value">{{ routeResult.duration_breakdown.visit_minutes }}分钟</text>
+          <text class="duration-label">景点停留</text>
+        </view>
+        <view class="duration-item">
+          <text class="duration-value">{{ routeResult.duration_breakdown.walking_minutes }}分钟</text>
+          <text class="duration-label">步行移动</text>
+        </view>
+        <view class="duration-item">
+          <text class="duration-value">{{ routeResult.duration_breakdown.buffer_minutes }}分钟</text>
+          <text class="duration-label">机动预留</text>
+        </view>
+      </view>
       <view class="timeline">
         <view class="spot-step" v-for="(spot, index) in routeResult.spots" :key="index">
           <text class="step-index">{{ index + 1 }}</text>
@@ -148,10 +190,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import { recommendRoute } from '../../api/tourist'
-import type { RouteRecommendRequest, RouteRecommendResponse } from '../../types/api'
+import { getScenicSpots, recommendRoute } from '../../api/tourist'
+import type { RouteRecommendRequest, RouteRecommendResponse, ScenicSpot } from '../../types/api'
 
 const interestOptions = [
   { label: '历史文化', value: '文化' },
@@ -198,6 +240,9 @@ const rerouteFromSpotName = ref('')
 const loading = ref(false)
 const routeResult = ref<RouteRecommendResponse | null>(null)
 const lastRouteRequest = ref<RouteRecommendRequest | null>(null)
+const scenicSpotOptions = ref<ScenicSpot[]>([])
+const startSpotSuggestions = computed(() => endpointSuggestions(startSpotName.value))
+const endSpotSuggestions = computed(() => endpointSuggestions(endSpotName.value))
 
 function toggleInterest(value: string) {
   interestTags.value = interestTags.value.includes(value)
@@ -226,6 +271,41 @@ function toggleServiceNeed(value: string) {
 function cleanText(value: string) {
   const text = value.trim()
   return text.length > 0 ? text : undefined
+}
+
+function normalizeSpotKeyword(value: string) {
+  return value.trim().replace(/[\s，。,.、（）()]/g, '').toLowerCase()
+}
+
+function endpointSuggestions(keyword: string) {
+  const normalized = normalizeSpotKeyword(keyword)
+  if (!normalized) return scenicSpotOptions.value.slice(0, 5)
+  const exact = scenicSpotOptions.value.find((spot) => normalizeSpotKeyword(spot.name) === normalized)
+  if (exact) return []
+  return scenicSpotOptions.value
+    .filter((spot) => {
+      const name = normalizeSpotKeyword(spot.name)
+      const alias = normalizeSpotKeyword(spot.alias || '')
+      return name.includes(normalized) || normalized.includes(name) || Boolean(alias && alias.includes(normalized))
+    })
+    .slice(0, 5)
+}
+
+function selectStartSpot(spot: ScenicSpot) {
+  startSpotName.value = spot.name
+}
+
+function selectEndSpot(spot: ScenicSpot) {
+  endSpotName.value = spot.name
+}
+
+async function loadScenicSpotOptions() {
+  try {
+    const response = await getScenicSpots()
+    scenicSpotOptions.value = response.items || []
+  } catch {
+    scenicSpotOptions.value = []
+  }
 }
 
 function buildRouteRequest(): RouteRecommendRequest {
@@ -302,6 +382,7 @@ function applyReroutePrefill(query: Record<string, unknown> = {}) {
 
 onLoad((query = {}) => {
   applyReroutePrefill(query)
+  loadScenicSpotOptions()
 })
 
 onShow(() => {
@@ -438,6 +519,10 @@ function startMapGuide() {
   gap: 14rpx;
 }
 
+.endpoint-field {
+  position: relative;
+}
+
 .text-input {
   height: 68rpx;
   padding: 0 20rpx;
@@ -446,6 +531,30 @@ function startMapGuide() {
   border: 1rpx solid #d7edf0;
   color: #17252b;
   font-size: 25rpx;
+}
+
+.suggestion-list {
+  margin-top: 10rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.suggestion-item {
+  min-height: 54rpx;
+  padding: 0 18rpx;
+  border-radius: 999rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff7f3;
+  border: 1rpx solid #f1d5ca;
+}
+
+.suggestion-item text {
+  color: #b4533c;
+  font-size: 23rpx;
+  font-weight: 700;
 }
 
 .reroute-note {
@@ -503,6 +612,41 @@ function startMapGuide() {
   color: #64747d;
   font-size: 25rpx;
   line-height: 1.65;
+}
+
+.duration-breakdown {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10rpx;
+  margin-top: 18rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid #edf3f4;
+}
+
+.duration-item {
+  min-width: 0;
+  padding: 14rpx 8rpx;
+  border-radius: 14rpx;
+  background: #f7fdfb;
+  text-align: center;
+}
+
+.duration-value,
+.duration-label {
+  display: block;
+}
+
+.duration-value {
+  color: #238fa3;
+  font-size: 28rpx;
+  font-weight: 900;
+}
+
+.duration-label {
+  margin-top: 4rpx;
+  color: #64747d;
+  font-size: 21rpx;
+  font-weight: 700;
 }
 
 .timeline {

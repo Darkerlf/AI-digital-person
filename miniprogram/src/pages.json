@@ -13,6 +13,12 @@
       }
     },
     {
+      "path": "pages/voice-capture/voice-capture",
+      "style": {
+        "navigationBarTitleText": "语音输入"
+      }
+    },
+    {
       "path": "pages/avatar/avatar",
       "style": {
         "navigationBarTitleText": "高拟真数字人"

@@ -1,42 +1,76 @@
-from collections import Counter
-
-from sqlalchemy import select
+from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from app.models.visitor_behavior_event import VisitorBehaviorEvent
 
 
+def _top_counts(db: Session, stat_date: str, column, *, filters=(), limit: int = 5) -> list[tuple[str, int]]:
+    count_label = func.count(VisitorBehaviorEvent.id).label("event_count")
+    statement = (
+        select(column, count_label)
+        .where(VisitorBehaviorEvent.event_time.like(f"{stat_date}%"), column.is_not(None), column != "")
+        .where(*filters)
+        .group_by(column)
+        .order_by(desc(count_label), column.asc())
+        .limit(limit)
+    )
+    return [(str(name), int(count)) for name, count in db.execute(statement).all()]
+
+
 def aggregate_daily_stats(db: Session, stat_date: str) -> dict[str, object]:
-    rows = db.execute(select(VisitorBehaviorEvent)).scalars().all()
-    day_rows = [row for row in rows if row.event_time.startswith(stat_date)]
-    hot_spots = Counter(row.spot_name for row in day_rows if row.spot_name)
-    hot_questions = Counter(
-        row.event_value
-        for row in day_rows
-        if row.event_type in {"question", "qa_question"} and row.event_value
+    day_filter = VisitorBehaviorEvent.event_time.like(f"{stat_date}%")
+    total_events = db.scalar(select(func.count(VisitorBehaviorEvent.id)).where(day_filter)) or 0
+    total_visitors = (
+        db.scalar(select(func.count(func.distinct(VisitorBehaviorEvent.visitor_id))).where(day_filter))
+        or 0
     )
-    missed_questions = Counter(
-        row.event_value
-        for row in day_rows
-        if row.event_type in {"miss", "missed_question", "unanswered_question"} and row.event_value
+    hot_spots = _top_counts(db, stat_date, VisitorBehaviorEvent.spot_name)
+    hot_questions = _top_counts(
+        db,
+        stat_date,
+        VisitorBehaviorEvent.event_value,
+        filters=(VisitorBehaviorEvent.event_type.in_({"question", "qa_question"}),),
     )
-    route_usage = Counter(row.route_name for row in day_rows if row.route_name)
-    active_hours = Counter(row.event_time[11:13] for row in day_rows if len(row.event_time) >= 13)
-    visitor_ids = {row.visitor_id for row in day_rows if row.visitor_id}
+    missed_questions = _top_counts(
+        db,
+        stat_date,
+        VisitorBehaviorEvent.event_value,
+        filters=(VisitorBehaviorEvent.event_type.in_({"miss", "missed_question", "unanswered_question"}),),
+    )
+    route_usage = _top_counts(db, stat_date, VisitorBehaviorEvent.route_name)
+    hour_column = func.substr(VisitorBehaviorEvent.event_time, 12, 2)
+    hour_count = func.count(VisitorBehaviorEvent.id).label("event_count")
+    active_hours = [
+        (str(hour), int(count))
+        for hour, count in db.execute(
+            select(hour_column, hour_count)
+            .where(day_filter, func.length(VisitorBehaviorEvent.event_time) >= 13)
+            .group_by(hour_column)
+            .order_by(desc(hour_count), hour_column.asc())
+            .limit(24)
+        ).all()
+    ]
+    score_rows = db.execute(
+        select(VisitorBehaviorEvent.event_value).where(
+            day_filter,
+            VisitorBehaviorEvent.event_type.in_({"feedback_score", "satisfaction_score"}),
+            VisitorBehaviorEvent.event_value.is_not(None),
+            VisitorBehaviorEvent.event_value != "",
+        )
+    ).all()
     scores = []
-    for row in day_rows:
-        if row.event_type in {"feedback_score", "satisfaction_score"} and row.event_value:
-            try:
-                scores.append(float(row.event_value))
-            except ValueError:
-                continue
+    for (value,) in score_rows:
+        try:
+            scores.append(float(value))
+        except (TypeError, ValueError):
+            continue
     return {
-        "total_events": len(day_rows),
-        "total_visitors": len(visitor_ids),
-        "hot_spot_top": hot_spots.most_common(5),
-        "hot_question_top": hot_questions.most_common(5),
-        "missed_question_top": missed_questions.most_common(5),
-        "route_usage": route_usage.most_common(5),
-        "active_hour_top": active_hours.most_common(24),
+        "total_events": int(total_events),
+        "total_visitors": int(total_visitors),
+        "hot_spot_top": hot_spots,
+        "hot_question_top": hot_questions,
+        "missed_question_top": missed_questions,
+        "route_usage": route_usage,
+        "active_hour_top": active_hours,
         "satisfaction_score": round(sum(scores) / len(scores), 1) if scores else None,
     }

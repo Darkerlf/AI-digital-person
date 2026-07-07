@@ -73,12 +73,13 @@ def _seed_scenic_data(test_db_session):
     return area, buddha
 
 
-def test_tourist_route_recommendation_does_not_require_admin_auth(test_db_session) -> None:
+def test_tourist_route_recommendation_requires_visitor_auth_not_admin_auth(test_db_session, visitor_auth_headers) -> None:
     area, _ = _seed_scenic_data(test_db_session)
     client = TestClient(app)
 
     response = client.post(
         "/api/tourist/routes/recommend",
+        headers=visitor_auth_headers,
         json={
             "scenic_area_id": area.id,
             "duration_minutes": 180,
@@ -104,7 +105,9 @@ def test_tourist_scenic_spot_narration_supports_modes(test_db_session) -> None:
     assert data["spot_id"] == spot.id
     assert data["mode"] == "family"
     assert "Lingshan Grand Buddha" in data["title"]
-    assert "children" in data["narration"].lower()
+    assert "children" not in data["narration"].lower()
+    assert "小朋友" in data["narration"]
+    assert "家长" in data["narration"]
 
 
 def test_tourist_service_pois_returns_fallback_items(test_db_session) -> None:
@@ -122,11 +125,12 @@ def test_tourist_service_pois_returns_fallback_items(test_db_session) -> None:
     assert data["items"][0]["longitude"] == 120.103365
 
 
-def test_tourist_feedback_accepts_score_and_content(test_db_session) -> None:
+def test_tourist_feedback_accepts_score_and_content(test_db_session, visitor_auth_headers) -> None:
     client = TestClient(app)
 
     response = client.post(
         "/api/tourist/feedback",
+        headers=visitor_auth_headers,
         json={
             "sentiment": "negative",
             "score": 2,

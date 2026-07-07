@@ -1,0 +1,277 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1120" viewBox="0 0 1680 1120" role="img" aria-labelledby="title desc">
+  <title id="title">景区导览服务 AI 数字人项目功能架构图</title>
+  <desc id="desc">面向真实开发场景的分层功能架构图，包含小程序、后台管理端、DH_live、FastAPI、领域服务、数据库和第三方服务。</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font: 800 30px "Microsoft YaHei UI", "Segoe UI", sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 15px "Microsoft YaHei UI", "Segoe UI", sans-serif; fill: #475569; }
+      .band-title { font: 800 18px "Microsoft YaHei UI", "Segoe UI", sans-serif; fill: #0f172a; }
+      .box-title { font: 800 16px "Microsoft YaHei UI", "Segoe UI", sans-serif; fill: #111827; }
+      .box-text { font: 400 12px "Microsoft YaHei UI", "Segoe UI", sans-serif; fill: #334155; }
+      .mono { font: 600 11px "Consolas", "Microsoft YaHei UI", monospace; fill: #334155; }
+      .tiny { font: 400 11px "Microsoft YaHei UI", "Segoe UI", sans-serif; fill: #64748b; }
+      .badge { font: 700 11px "Microsoft YaHei UI", "Segoe UI", sans-serif; fill: #0f172a; }
+      .layer { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; }
+      .client { fill: #eff6ff; stroke: #60a5fa; stroke-width: 1.4; }
+      .runtime { fill: #fff7ed; stroke: #fb923c; stroke-width: 1.4; }
+      .api { fill: #eef2ff; stroke: #818cf8; stroke-width: 1.4; }
+      .service { fill: #ecfdf5; stroke: #34d399; stroke-width: 1.4; }
+      .service2 { fill: #f0f9ff; stroke: #38bdf8; stroke-width: 1.4; }
+      .service3 { fill: #fdf4ff; stroke: #d946ef; stroke-width: 1.4; }
+      .data { fill: #fffbeb; stroke: #f59e0b; stroke-width: 1.4; }
+      .external { fill: #fff1f2; stroke: #fb7185; stroke-width: 1.4; }
+      .note { fill: #f1f5f9; stroke: #cbd5e1; stroke-width: 1.2; }
+      .arrow { stroke: #475569; stroke-width: 1.6; fill: none; marker-end: url(#arrow); }
+      .arrow-soft { stroke: #94a3b8; stroke-width: 1.25; fill: none; marker-end: url(#arrow-soft); }
+      .flow-label { font: 700 11px "Microsoft YaHei UI", "Segoe UI", sans-serif; fill: #334155; }
+      .dot { fill: #0f766e; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-soft" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <rect class="bg" width="1680" height="1120"/>
+
+  <g transform="translate(48,36)">
+    <text class="title" x="0" y="0" dominant-baseline="hanging">景区导览服务 AI 数字人项目 - 功能架构图</text>
+    <text class="subtitle" x="0" y="44" dominant-baseline="hanging">开发视角：端侧应用、接口边界、领域服务、数据持久化、外部依赖和核心业务闭环</text>
+    <text class="tiny" x="1280" y="48">生成日期：2026-06-09</text>
+  </g>
+
+  <!-- Layer 1 -->
+  <g transform="translate(48,112)">
+    <rect class="layer" width="1584" height="190" rx="10"/>
+    <text class="band-title" x="22" y="24">01 表现层 / 运行端</text>
+
+    <g filter="url(#shadow)" transform="translate(28,56)">
+      <rect class="client" width="350" height="108" rx="8"/>
+      <text class="box-title" x="18" y="24">微信小程序游客端</text>
+      <text class="box-text" x="18" y="50">uni-app / mp-weixin</text>
+      <text class="mono" x="18" y="73">pages: index, guide, map, route, route-guide</text>
+      <text class="box-text" x="18" y="94">登录拦截、AI 导游、路线推荐、步行导览、反馈</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(430,56)">
+      <rect class="client" width="350" height="108" rx="8"/>
+      <text class="box-title" x="18" y="24">景区后台管理端</text>
+      <text class="box-text" x="18" y="50">Vue 3 + Vite + Pinia + Router</text>
+      <text class="mono" x="18" y="73">admin-web/src/views/*</text>
+      <text class="box-text" x="18" y="94">景区、景点、知识库、FAQ、路线、报表、账号</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(832,56)">
+      <rect class="runtime" width="350" height="108" rx="8"/>
+      <text class="box-title" x="18" y="24">DH_live 数字人 H5</text>
+      <text class="box-text" x="18" y="50">prototypes/dh-live-guide</text>
+      <text class="mono" x="18" y="73">web-view: source=mini-guide, api, auth</text>
+      <text class="box-text" x="18" y="94">数字人渲染、语音输入、音频播放、口型表情同步</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(1234,56)">
+      <rect class="note" width="318" height="108" rx="8"/>
+      <text class="box-title" x="18" y="24">开发与调试入口</text>
+      <text class="box-text" x="18" y="50">微信开发者工具、浏览器、Visio 文档</text>
+      <text class="mono" x="18" y="73">npm.cmd run dev / build:mp-weixin</text>
+      <text class="box-text" x="18" y="94">本地 127.0.0.1 或局域网地址联调</text>
+    </g>
+  </g>
+
+  <!-- Layer 2 -->
+  <g transform="translate(48,332)">
+    <rect class="layer" width="1584" height="186" rx="10"/>
+    <text class="band-title" x="22" y="24">02 接口边界 / API Gateway</text>
+
+    <g filter="url(#shadow)" transform="translate(28,56)">
+      <rect class="api" width="385" height="104" rx="8"/>
+      <text class="box-title" x="18" y="23">FastAPI 统一入口</text>
+      <text class="mono" x="18" y="48">backend/app/main.py</text>
+      <text class="mono" x="18" y="69">prefix: /api</text>
+      <text class="box-text" x="18" y="91">CORS、路由注册、启动时预加载向量索引</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(448,56)">
+      <rect class="api" width="340" height="104" rx="8"/>
+      <text class="box-title" x="18" y="23">游客端 API</text>
+      <text class="mono" x="18" y="48">/tourist/home, /chat, /voice/*</text>
+      <text class="mono" x="18" y="69">/map-guide, /routes/recommend</text>
+      <text class="mono" x="18" y="90">/routes/walk-guide, /feedback</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(823,56)">
+      <rect class="api" width="340" height="104" rx="8"/>
+      <text class="box-title" x="18" y="23">后台管理 API</text>
+      <text class="mono" x="18" y="48">/auth, /dashboard, /scenic-spots</text>
+      <text class="mono" x="18" y="69">/knowledge/*, /route-templates</text>
+      <text class="mono" x="18" y="90">/imports, /settings, /operation-logs</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(1198,56)">
+      <rect class="api" width="354" height="104" rx="8"/>
+      <text class="box-title" x="18" y="23">认证与请求客户端</text>
+      <text class="mono" x="18" y="48">JWT Bearer Token</text>
+      <text class="mono" x="18" y="69">admin-web/apiClient, miniprogram/request</text>
+      <text class="box-text" x="18" y="91">后台 RBAC + 游客登录态 + DH_live auth 参数</text>
+    </g>
+  </g>
+
+  <!-- Layer 3 -->
+  <g transform="translate(48,548)">
+    <rect class="layer" width="1584" height="286" rx="10"/>
+    <text class="band-title" x="22" y="24">03 领域服务 / 业务能力层</text>
+
+    <g filter="url(#shadow)" transform="translate(28,56)">
+      <rect class="service" width="300" height="98" rx="8"/>
+      <text class="box-title" x="18" y="23">内容运营域</text>
+      <text class="mono" x="18" y="48">ScenicArea / ScenicSpot / ServicePOI</text>
+      <text class="mono" x="18" y="69">KnowledgeDocument / FAQ</text>
+      <text class="box-text" x="18" y="90">景区、景点、服务点、知识和高频问答维护</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(360,56)">
+      <rect class="service2" width="300" height="98" rx="8"/>
+      <text class="box-title" x="18" y="23">AI 导游域</text>
+      <text class="mono" x="18" y="48">ChatService / RAGPipeline</text>
+      <text class="mono" x="18" y="69">IntentClassifier / LLMClient</text>
+      <text class="box-text" x="18" y="90">意图识别、知识检索、回答生成、来源追踪</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(692,56)">
+      <rect class="service" width="300" height="98" rx="8"/>
+      <text class="box-title" x="18" y="23">路线与地图域</text>
+      <text class="mono" x="18" y="48">RouteRecommendationService</text>
+      <text class="mono" x="18" y="69">WalkGuideService / TencentMapClient</text>
+      <text class="box-text" x="18" y="90">模板匹配、RAG 推荐、步行规划、偏航重算</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(1024,56)">
+      <rect class="service3" width="250" height="98" rx="8"/>
+      <text class="box-title" x="18" y="23">语音与数字人域</text>
+      <text class="mono" x="18" y="48">ASRService / TTSService</text>
+      <text class="mono" x="18" y="69">DigitalHumanService</text>
+      <text class="box-text" x="18" y="90">语音识别、语音合成、数字人配置</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(1306,56)">
+      <rect class="service2" width="246" height="98" rx="8"/>
+      <text class="box-title" x="18" y="23">运营分析域</text>
+      <text class="mono" x="18" y="48">DashboardService</text>
+      <text class="mono" x="18" y="69">Conversation / Feedback Report</text>
+      <text class="box-text" x="18" y="90">事件统计、会话质检、感受度报告</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(28,178)">
+      <rect class="note" width="500" height="78" rx="8"/>
+      <text class="box-title" x="18" y="23">知识修正闭环</text>
+      <text class="box-text" x="18" y="49">未命中问题进入会话管理，运营人员创建 FAQ/文档修正任务，修复后重新进入 RAG 检索链路。</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(566,178)">
+      <rect class="note" width="500" height="78" rx="8"/>
+      <text class="box-title" x="18" y="23">路线导览闭环</text>
+      <text class="box-text" x="18" y="49">路线模板、知识库和游客偏好生成路线，再由步行规划形成真实可走 polyline 和沿途服务点。</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(1104,178)">
+      <rect class="note" width="448" height="78" rx="8"/>
+      <text class="box-title" x="18" y="23">坐标校准闭环</text>
+      <text class="box-text" x="18" y="49">后台通过腾讯候选坐标人工确认，支撑小程序地图展示、路线推荐和步行导览准确性。</text>
+    </g>
+  </g>
+
+  <!-- Layer 4 -->
+  <g transform="translate(48,864)">
+    <rect class="layer" width="1584" height="202" rx="10"/>
+    <text class="band-title" x="22" y="24">04 数据持久化 / 基础设施 / 外部服务</text>
+
+    <g filter="url(#shadow)" transform="translate(28,56)">
+      <rect class="data" width="360" height="110" rx="8"/>
+      <text class="box-title" x="18" y="24">MySQL 业务数据库</text>
+      <text class="mono" x="18" y="49">SQLAlchemy Models</text>
+      <text class="box-text" x="18" y="72">admin_user, visitor, scenic_area, scenic_spot, service_poi</text>
+      <text class="box-text" x="18" y="94">knowledge_document/chunk, conversation, feedback, route_template</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(418,56)">
+      <rect class="data" width="290" height="110" rx="8"/>
+      <text class="box-title" x="18" y="24">文件与导入资料</text>
+      <text class="mono" x="18" y="49">data/*.docx, data/*.xlsx</text>
+      <text class="mono" x="18" y="70">uploads/</text>
+      <text class="box-text" x="18" y="94">景点导入、知识导入、行为数据导入</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(738,56)">
+      <rect class="external" width="300" height="110" rx="8"/>
+      <text class="box-title" x="18" y="24">AI 云能力</text>
+      <text class="mono" x="18" y="49">DashScope compatible API</text>
+      <text class="box-text" x="18" y="72">LLM、Embedding、TTS、ASR</text>
+      <text class="box-text" x="18" y="94">通过 .env 管理 Key，避免提交真实密钥</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(1068,56)">
+      <rect class="external" width="260" height="110" rx="8"/>
+      <text class="box-title" x="18" y="24">腾讯位置服务</text>
+      <text class="mono" x="18" y="49">Place Search</text>
+      <text class="mono" x="18" y="70">Direction Walking</text>
+      <text class="box-text" x="18" y="94">景点坐标候选、步行路线规划</text>
+    </g>
+
+    <g filter="url(#shadow)" transform="translate(1358,56)">
+      <rect class="external" width="194" height="110" rx="8"/>
+      <text class="box-title" x="18" y="24">微信 / OSS / 静态资源</text>
+      <text class="mono" x="18" y="49">wx-login</text>
+      <text class="mono" x="18" y="70">Aliyun OSS / local</text>
+      <text class="box-text" x="18" y="94">头像、TTS 音频、数字人资源</text>
+    </g>
+  </g>
+
+  <!-- Main arrows -->
+  <path class="arrow" d="M223 302 C223 322, 245 330, 245 360"/>
+  <path class="arrow" d="M653 302 C653 322, 655 330, 655 360"/>
+  <path class="arrow" d="M1055 302 C1055 322, 1065 330, 1065 360"/>
+  <path class="arrow-soft" d="M1450 302 C1450 324, 1396 330, 1396 360"/>
+
+  <path class="arrow" d="M255 518 C255 535, 238 544, 226 604"/>
+  <path class="arrow" d="M618 518 C618 538, 530 544, 510 604"/>
+  <path class="arrow" d="M954 518 C954 538, 842 544, 842 604"/>
+  <path class="arrow" d="M1288 518 C1288 538, 1148 544, 1148 604"/>
+  <path class="arrow" d="M1392 518 C1392 538, 1430 544, 1430 604"/>
+
+  <path class="arrow" d="M197 834 C197 850, 228 856, 228 920"/>
+  <path class="arrow" d="M510 834 C510 850, 562 856, 562 920"/>
+  <path class="arrow" d="M842 834 C842 850, 888 856, 888 920"/>
+  <path class="arrow" d="M1148 834 C1148 850, 1198 856, 1198 920"/>
+  <path class="arrow" d="M1430 834 C1430 850, 1468 856, 1468 920"/>
+
+  <!-- Cross-service arrows -->
+  <path class="arrow-soft" d="M410 653 C432 653, 438 653, 460 653"/>
+  <path class="arrow-soft" d="M660 653 C682 653, 688 653, 710 653"/>
+  <path class="arrow-soft" d="M992 653 C1014 653, 1020 653, 1042 653"/>
+  <path class="arrow-soft" d="M1274 653 C1294 653, 1300 653, 1320 653"/>
+
+  <g transform="translate(56,1078)">
+    <circle class="dot" cx="8" cy="8" r="5"/>
+    <text class="tiny" x="22" y="12">建议阅读方式：先看横向分层，再看纵向数据流；端侧功能通过 /api 进入领域服务，领域服务统一落库并调用外部云能力。</text>
+  </g>
+
+  <!-- Labels -->
+  <g>
+    <text class="flow-label" x="230" y="336">HTTP / JWT</text>
+    <text class="flow-label" x="653" y="336">Admin API</text>
+    <text class="flow-label" x="1070" y="336">Chat / Voice / Feedback</text>
+    <text class="flow-label" x="1404" y="336">Local Dev</text>
+
+    <text class="flow-label" x="260" y="555">CRUD</text>
+    <text class="flow-label" x="548" y="555">RAG</text>
+    <text class="flow-label" x="868" y="555">Route</text>
+    <text class="flow-label" x="1168" y="555">Media</text>
+    <text class="flow-label" x="1400" y="555">Analytics</text>
+  </g>
+</svg>

@@ -13,17 +13,29 @@
                 :key="item.id"
                 :label="item.name"
                 :value="String(item.id)"
-              />
+              >
+                {{ item.name }}
+              </el-option>
             </el-select>
           </el-form-item>
           <el-form-item label="文档标题">
             <el-input v-model="form.title" placeholder="文档标题" />
           </el-form-item>
           <el-form-item label="文档类型">
-            <el-input v-model="form.doc_type" placeholder="文档类型" />
+            <el-select v-model="form.doc_type" placeholder="选择文档类型" style="width: 100%">
+              <el-option
+                v-for="item in documentTypeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              >
+                {{ item.label }}
+              </el-option>
+            </el-select>
+            <p class="field-help">请选择文档来源格式，系统会按类型进行展示和后续处理。</p>
           </el-form-item>
           <el-form-item label="来源名称">
-            <el-input v-model="form.source_name" placeholder="来源名称" />
+            <el-input v-model="form.source_name" placeholder="来源名称，如 guide.docx 或运营手工录入" />
           </el-form-item>
           <el-form-item label="文档内容">
             <el-input v-model="form.content_text" type="textarea" :rows="6" placeholder="文档内容" />
@@ -44,7 +56,7 @@
         <el-table :data="documents" stripe style="width: 100%">
           <el-table-column prop="title" label="标题" />
           <el-table-column prop="doc_type" label="类型" width="120" />
-          <el-table-column prop="source_name" label="来源" width="150" />
+          <el-table-column prop="source_name" label="来源" width="180" />
           <el-table-column prop="status" label="状态" width="100" />
           <el-table-column label="操作" width="220">
             <template #default="{ row }">
@@ -79,6 +91,13 @@ type KnowledgeDocumentItem = {
   content_text: string
   status: string
 }
+
+const documentTypeOptions = [
+  { label: 'Markdown 文档', value: 'markdown' },
+  { label: 'Word 文档', value: 'docx' },
+  { label: 'Excel 表格', value: 'xlsx' },
+  { label: '纯文本', value: 'txt' },
+]
 
 const documents = ref<KnowledgeDocumentItem[]>([])
 const scenicAreas = ref<Array<{ id: number; name: string }>>([])
@@ -185,3 +204,11 @@ defineExpose({
   toggleDocumentStatus,
 })
 </script>
+
+<style scoped>
+.field-help {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+</style>

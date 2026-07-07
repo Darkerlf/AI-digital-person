@@ -4,8 +4,12 @@
 .venv/
 __pycache__/
 .pytest_cache/
+.docx_build/
+.docx_render/
 *.pyc
 .env
+.env.local
+.env.*.local
 *.db
 *.sqlite
 *.sqlite3

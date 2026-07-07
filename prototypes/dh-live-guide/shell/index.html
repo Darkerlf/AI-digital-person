@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>灵山胜境 AI 导游</title>
     <link rel="icon" href="data:,">
-    <link rel="stylesheet" href="../src/styles.css?v=live-guide-7">
+    <link rel="stylesheet" href="../src/styles.css?v=live-guide-12">
   </head>
   <body>
     <main class="guide-layout stage-first-layout">
@@ -47,8 +47,8 @@
         <div class="panel-transcript">
           <div id="messages" class="messages" aria-live="polite">
             <article class="message assistant welcome-message">
-              <span class="message-speaker" aria-hidden="true">声</span>
-              <p>灵山胜境位于无锡马山，是以灵山大佛为核心的国家 5A 级旅游景区，集自然风光与佛教文化于一体。我可以为您介绍景点、路线、门票与服务。</p>
+              <span class="message-speaker" aria-hidden="true">灵</span>
+              <p class="message-content">灵山胜境位于无锡马山，是以灵山大佛为核心的国家 5A 级旅游景区，集自然风光与佛教文化于一体。我可以为您介绍景点、路线、门票与服务。</p>
             </article>
           </div>
         </div>
@@ -79,7 +79,7 @@
 
     <template id="assistant-message-template">
       <article class="message assistant">
-        <span class="message-speaker" aria-hidden="true">声</span>
+        <span class="message-speaker" aria-hidden="true">灵</span>
         <p class="message-content"></p>
         <div class="feedback-actions" aria-label="回答评价">
           <button type="button" data-feedback-sentiment="positive">赞</button>
@@ -117,6 +117,7 @@
     <script src="js/DHLiveMini.js"></script>
     <script src="js/MiniMateLoader.js"></script>
     <script src="js/MiniLive2.js"></script>
-    <script type="module" src="../src/app.mjs?v=live-guide-7"></script>
+    <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
+    <script type="module" src="../src/app.mjs?v=live-guide-12"></script>
   </body>
 </html>

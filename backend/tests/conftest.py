@@ -8,10 +8,11 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_db
 from app.core.config import settings
-from app.core.security import hash_password
+from app.core.security import create_access_token, hash_password
 from app.main import app
 from app.models import load_all_models
 from app.models.admin_user import AdminUser
+from app.models.visitor import Visitor
 
 
 @pytest.fixture(autouse=True)
@@ -110,4 +111,14 @@ def ops_auth_headers(test_db_session) -> dict[str, str]:
         json={"username": "ops_admin", "password": "ops123"},
     )
     token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture()
+def visitor_auth_headers(test_db_session) -> dict[str, str]:
+    visitor = Visitor(openid="wx-test-visitor", nickname="测试游客")
+    test_db_session.add(visitor)
+    test_db_session.commit()
+    test_db_session.refresh(visitor)
+    token = create_access_token(f"visitor:{visitor.id}")
     return {"Authorization": f"Bearer {token}"}

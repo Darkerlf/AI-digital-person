@@ -8,7 +8,7 @@ from app.models.conversation_message import ConversationMessage
 from app.services.intent_classifier import Intent
 
 
-def test_chat_stream_feedback_binds_to_generated_message(test_db_session) -> None:
+def test_chat_stream_feedback_binds_to_generated_message(test_db_session, visitor_auth_headers) -> None:
     client = TestClient(app)
 
     with patch("app.services.chat_service.IntentClassifier.classify", new_callable=AsyncMock, return_value=Intent.SCENIC_QA):
@@ -19,9 +19,15 @@ def test_chat_stream_feedback_binds_to_generated_message(test_db_session) -> Non
                 yield "Welcome"
                 yield " to Lingshan"
 
+            instance.retrieve = AsyncMock(return_value=[])
             instance.answer_stream = fake_stream
 
-            with client.stream("POST", "/api/tourist/chat/stream", json={"message": "Introduce Lingshan"}) as response:
+            with client.stream(
+                "POST",
+                "/api/tourist/chat/stream",
+                headers=visitor_auth_headers,
+                json={"message": "Introduce Lingshan"},
+            ) as response:
                 assert response.status_code == 200
                 response.read()
                 frames = [
@@ -36,6 +42,7 @@ def test_chat_stream_feedback_binds_to_generated_message(test_db_session) -> Non
 
     feedback_response = client.post(
         "/api/tourist/feedback",
+        headers=visitor_auth_headers,
         json={
             "session_id": meta["session_id"],
             "message_id": meta["message_id"],
@@ -46,4 +53,3 @@ def test_chat_stream_feedback_binds_to_generated_message(test_db_session) -> Non
     assert feedback_response.status_code == 200
     message = test_db_session.get(ConversationMessage, meta["message_id"])
     assert message.feedback_status == "disliked"
-

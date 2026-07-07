@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import JWTError, decode_access_token
 from app.repositories.admin_user_repo import AdminUserRepository
+from app.services.visitor_service import VisitorService
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -36,6 +37,22 @@ def get_current_user(
 
 def require_authenticated_user(current_user=Depends(get_current_user)):
     return current_user
+
+
+def get_current_visitor(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+):
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    visitor = VisitorService(db).get_visitor_by_token(credentials.credentials)
+    if visitor is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid visitor token")
+    return visitor
+
+
+def require_authenticated_visitor(current_visitor=Depends(get_current_visitor)):
+    return current_visitor
 
 
 def require_roles(*roles: str):

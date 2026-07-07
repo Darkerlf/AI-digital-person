@@ -51,6 +51,11 @@ class RouteRecommendationService:
                 for item in sorted(template.spots, key=lambda value: value.sort_order)
             ],
         }
+        result["duration_breakdown"] = self._build_duration_breakdown(
+            result["spots"],
+            payload.duration_minutes,
+            pace=payload.pace,
+        )
         self._record_generation(payload, result)
         return result
 
@@ -103,3 +108,33 @@ class RouteRecommendationService:
         import json
 
         return json.loads(raw_tags or "[]")
+
+    @classmethod
+    def _build_duration_breakdown(
+        cls,
+        spots: list[dict],
+        total_minutes: int,
+        pace: str | None = None,
+    ) -> dict[str, int]:
+        walking_minutes = cls._estimate_walking_minutes(spots, pace)
+        visit_minutes = sum(int(spot.get("stay_minutes") or 0) for spot in spots)
+        if visit_minutes <= 0:
+            visit_minutes = max(0, total_minutes - walking_minutes)
+        buffer_minutes = max(0, total_minutes - visit_minutes - walking_minutes)
+        return {
+            "total_minutes": total_minutes,
+            "visit_minutes": visit_minutes,
+            "walking_minutes": walking_minutes,
+            "buffer_minutes": buffer_minutes,
+        }
+
+    @staticmethod
+    def _estimate_walking_minutes(spots: list[dict], pace: str | None = None) -> int:
+        transitions = max(0, len(spots) - 1)
+        per_leg = {
+            "fast": 6,
+            "standard": 8,
+            "normal": 8,
+            "relaxed": 10,
+        }.get(pace or "standard", 8)
+        return transitions * per_leg

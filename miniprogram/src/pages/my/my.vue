@@ -159,8 +159,7 @@ function handleLogout() {
 }
 
 function goToHistory() {
-  const visitorId = authStore.isLoggedIn ? String(authStore.visitorDbId) : undefined
-  getRecentRecords(visitorId)
+  getRecentRecords()
     .then((res) => {
       const first = res.items?.[0]?.messages?.[0]
       if (!first) {

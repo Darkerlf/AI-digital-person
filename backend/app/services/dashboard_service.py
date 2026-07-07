@@ -3,6 +3,7 @@ from pathlib import Path
 import re
 
 from fastapi import HTTPException, status
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.importers.behavior_excel_importer import BehaviorExcelImporter
@@ -42,6 +43,23 @@ def _json_safe(value):
     return value
 
 
+def _import_job_to_dict(job) -> dict[str, object]:
+    return {
+        "id": job.id,
+        "job_type": job.job_type,
+        "source_file_name": job.source_file_name,
+        "source_file_path": job.source_file_path,
+        "status": job.status,
+        "total_count": job.total_count,
+        "success_count": job.success_count,
+        "failed_count": job.failed_count,
+        "error_message": job.error_message,
+        "started_at": job.started_at,
+        "finished_at": job.finished_at,
+        "created_by": job.created_by,
+    }
+
+
 class DashboardService:
     def __init__(self, db: Session) -> None:
         self.db = db
@@ -53,13 +71,16 @@ class DashboardService:
             "total_events": self.repo.count_events(),
             "total_spots": self.repo.count_spots(),
             "total_documents": self.repo.count_documents(),
-            "recent_import_jobs": self.repo.recent_jobs(),
+            "recent_import_jobs": [_import_job_to_dict(job) for job in self.repo.recent_jobs()],
         }
 
     def _latest_event_date(self) -> str | None:
-        rows = self.db.query(VisitorBehaviorEvent).all()
-        dates = [row.event_time[:10] for row in rows if row.event_time]
-        return max(dates) if dates else None
+        return self.db.scalar(
+            select(func.max(func.substr(VisitorBehaviorEvent.event_time, 1, 10))).where(
+                VisitorBehaviorEvent.event_time.is_not(None),
+                VisitorBehaviorEvent.event_time != "",
+            )
+        )
 
     def get_hot_spots(self, stat_date: str | None = None) -> dict[str, object]:
         selected_date = stat_date or self._latest_event_date()
@@ -69,16 +90,24 @@ class DashboardService:
         return {"stat_date": selected_date, "items": stats["hot_spot_top"]}
 
     def get_behavior_trends(self, start_date: str | None = None, end_date: str | None = None) -> dict[str, object]:
-        rows = self.db.query(VisitorBehaviorEvent).all()
-        trends: dict[str, int] = {}
-        for row in rows:
-            day = row.event_time[:10]
-            if start_date and day < start_date:
-                continue
-            if end_date and day > end_date:
-                continue
-            trends[day] = trends.get(day, 0) + 1
-        return {"items": [{"date": key, "count": value} for key, value in sorted(trends.items())]}
+        day_column = func.substr(VisitorBehaviorEvent.event_time, 1, 10)
+        count_label = func.count(VisitorBehaviorEvent.id).label("event_count")
+        statement = (
+            select(day_column, count_label)
+            .where(VisitorBehaviorEvent.event_time.is_not(None), VisitorBehaviorEvent.event_time != "")
+            .group_by(day_column)
+            .order_by(day_column.asc())
+        )
+        if start_date:
+            statement = statement.where(day_column >= start_date)
+        if end_date:
+            statement = statement.where(day_column <= end_date)
+        return {
+            "items": [
+                {"date": str(day), "count": int(count)}
+                for day, count in self.db.execute(statement).all()
+            ]
+        }
 
     def _filter_feedback_rows(
         self,

@@ -142,7 +142,30 @@ class TTSService:
         audio_bytes = b"".join(collector.chunks)
         if not audio_bytes:
             raise RuntimeError("DashScope realtime TTS returned empty audio")
-        return audio_bytes
+        return self.normalize_wav_header(audio_bytes)
+
+    def normalize_wav_header(self, audio_bytes: bytes) -> bytes:
+        if len(audio_bytes) < 44 or audio_bytes[:4] != b"RIFF" or audio_bytes[8:12] != b"WAVE":
+            return audio_bytes
+
+        normalized = bytearray(audio_bytes)
+        riff_size = len(normalized) - 8
+        normalized[4:8] = riff_size.to_bytes(4, "little", signed=False)
+
+        cursor = 12
+        while cursor + 8 <= len(normalized):
+            chunk_id = bytes(normalized[cursor:cursor + 4])
+            chunk_size = int.from_bytes(normalized[cursor + 4:cursor + 8], "little", signed=False)
+            data_start = cursor + 8
+            if chunk_id == b"data":
+                data_size = max(0, len(normalized) - data_start)
+                normalized[cursor + 4:cursor + 8] = data_size.to_bytes(4, "little", signed=False)
+                break
+            if chunk_size <= 0:
+                break
+            cursor = data_start + chunk_size + (chunk_size % 2)
+
+        return bytes(normalized)
 
     async def synthesize_to_file(self, text: str, output_path: str, voice: str | None = None) -> str:
         if not text or not text.strip():

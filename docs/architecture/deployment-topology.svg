@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="860" viewBox="0 0 1500 860" role="img" aria-labelledby="title desc">
+  <title id="title">部署拓扑图</title>
+  <desc id="desc">景区导览服务 AI 数字人项目的本地开发和生产部署拓扑。</desc>
+  <defs>
+    <style>
+      .bg{fill:#f8fafc}.title{font:800 28px "Microsoft YaHei UI",sans-serif;fill:#0f172a}.sub{font:400 14px "Microsoft YaHei UI",sans-serif;fill:#475569}
+      .zone{fill:#fff;stroke:#cbd5e1;stroke-width:1.2}.box{fill:#eff6ff;stroke:#60a5fa;stroke-width:1.5}.box2{fill:#ecfdf5;stroke:#34d399;stroke-width:1.5}
+      .box3{fill:#fff7ed;stroke:#fb923c;stroke-width:1.5}.box4{fill:#fff1f2;stroke:#fb7185;stroke-width:1.5}.box5{fill:#fffbeb;stroke:#f59e0b;stroke-width:1.5}
+      .h{font:800 16px "Microsoft YaHei UI",sans-serif;fill:#111827}.t{font:400 12px "Microsoft YaHei UI",sans-serif;fill:#334155}.m{font:600 11px Consolas,"Microsoft YaHei UI",monospace;fill:#334155}
+      .ztitle{font:800 18px "Microsoft YaHei UI",sans-serif;fill:#0f172a}.arrow{stroke:#475569;stroke-width:1.6;fill:none;marker-end:url(#a)}.soft{stroke:#94a3b8;stroke-width:1.2;fill:none;marker-end:url(#b)}
+    </style>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#475569"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#94a3b8"/></marker>
+  </defs>
+  <rect class="bg" width="1500" height="860"/>
+  <text class="title" x="48" y="42">部署拓扑图</text>
+  <text class="sub" x="48" y="76">覆盖本地开发、测试联调、生产上线所需的端、服务、数据和外部依赖。</text>
+
+  <rect class="zone" x="48" y="112" width="660" height="690" rx="12"/>
+  <text class="ztitle" x="76" y="148">本地开发 / 演示环境</text>
+  <rect class="box" x="84" y="182" width="260" height="96" rx="8"/>
+  <text class="h" x="106" y="211">微信开发者工具</text><text class="t" x="106" y="237">导入 dist/build/mp-weixin</text><text class="m" x="106" y="260">VITE_API_BASE_URL=127.0.0.1/api</text>
+  <rect class="box" x="400" y="182" width="260" height="96" rx="8"/>
+  <text class="h" x="422" y="211">后台管理端 Dev Server</text><text class="m" x="422" y="237">admin-web: npm.cmd run dev</text><text class="t" x="422" y="260">默认 http://localhost:5173</text>
+  <rect class="box2" x="242" y="334" width="260" height="108" rx="8"/>
+  <text class="h" x="264" y="363">FastAPI 后端</text><text class="m" x="264" y="389">uvicorn app.main:app</text><text class="m" x="264" y="412">0.0.0.0:8000 /api</text>
+  <rect class="box3" x="84" y="500" width="260" height="96" rx="8"/>
+  <text class="h" x="106" y="529">DH_live H5 Runtime</text><text class="m" x="106" y="555">localhost:58120/runtime/index.html</text><text class="t" x="106" y="578">小程序 web-view 调试入口</text>
+  <rect class="box5" x="400" y="500" width="260" height="96" rx="8"/>
+  <text class="h" x="422" y="529">本机 MySQL / uploads</text><text class="m" x="422" y="555">scenic_admin</text><text class="t" x="422" y="578">上传文件、导入样例、临时音频</text>
+  <rect class="box4" x="242" y="650" width="260" height="88" rx="8"/>
+  <text class="h" x="264" y="679">外部云服务 Key</text><text class="m" x="264" y="704">.env / .env.local</text><text class="t" x="264" y="727">DashScope、腾讯地图、微信登录、OSS</text>
+
+  <path class="arrow" d="M344 230 C378 230 370 386 242 386"/><text class="m" x="328" y="318">HTTP</text>
+  <path class="arrow" d="M400 230 C372 250 372 300 372 334"/><text class="m" x="380" y="304">Admin API</text>
+  <path class="arrow" d="M214 500 C214 450 250 430 300 420"/><text class="m" x="176" y="462">Chat/TTS/ASR</text>
+  <path class="arrow" d="M502 500 C502 462 458 442 430 426"/><text class="m" x="512" y="466">SQL</text>
+  <path class="soft" d="M372 442 C372 512 372 584 372 650"/>
+
+  <rect class="zone" x="792" y="112" width="660" height="690" rx="12"/>
+  <text class="ztitle" x="820" y="148">生产部署建议</text>
+  <rect class="box" x="828" y="182" width="260" height="96" rx="8"/>
+  <text class="h" x="850" y="211">微信小程序线上版</text><text class="t" x="850" y="237">配置合法 request 域名</text><text class="m" x="850" y="260">https://api.example.com/api</text>
+  <rect class="box" x="1144" y="182" width="260" height="96" rx="8"/>
+  <text class="h" x="1166" y="211">后台管理端静态站点</text><text class="t" x="1166" y="237">Nginx / CDN / 对象存储静态托管</text><text class="m" x="1166" y="260">admin.example.com</text>
+  <rect class="box2" x="986" y="334" width="260" height="108" rx="8"/>
+  <text class="h" x="1008" y="363">后端 API 服务</text><text class="t" x="1008" y="389">FastAPI + Uvicorn/Gunicorn</text><text class="t" x="1008" y="412">HTTPS、日志、健康检查、限流</text>
+  <rect class="box5" x="828" y="500" width="260" height="96" rx="8"/>
+  <text class="h" x="850" y="529">托管数据库</text><text class="t" x="850" y="555">MySQL 8.0 / 自动备份</text><text class="t" x="850" y="578">最小权限账号、慢查询监控</text>
+  <rect class="box3" x="1144" y="500" width="260" height="96" rx="8"/>
+  <text class="h" x="1166" y="529">DH_live 承载方案</text><text class="t" x="1166" y="555">企业小程序 web-view 或原生化替代</text><text class="t" x="1166" y="578">个人小程序需规避 web-view 域名限制</text>
+  <rect class="box4" x="986" y="650" width="260" height="88" rx="8"/>
+  <text class="h" x="1008" y="679">第三方服务</text><text class="t" x="1008" y="704">DashScope / Tencent Map / WeChat / OSS</text><text class="t" x="1008" y="727">密钥托管、额度监控、失败降级</text>
+  <path class="arrow" d="M1088 230 C1116 260 1116 300 1116 334"/><text class="m" x="1102" y="304">HTTPS</text>
+  <path class="arrow" d="M1274 278 C1274 310 1240 342 1246 386"/><text class="m" x="1276" y="328">Admin API</text>
+  <path class="arrow" d="M986 386 C940 420 958 468 958 500"/><text class="m" x="906" y="466">SQL</text>
+  <path class="arrow" d="M1246 442 C1284 464 1284 488 1274 500"/><text class="m" x="1292" y="466">DH Bridge</text>
+  <path class="soft" d="M1116 442 C1116 512 1116 584 1116 650"/>
+</svg>

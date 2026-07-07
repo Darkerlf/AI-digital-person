@@ -32,6 +32,37 @@ def test_create_document_and_generate_chunks(test_db_session, auth_headers) -> N
     assert len(chunks.json()["items"]) >= 1
 
 
+def test_list_chunks_does_not_serialize_embedding_vectors(test_db_session, auth_headers) -> None:
+    client = TestClient(app)
+    area_response = client.post(
+        "/api/scenic-areas",
+        headers=auth_headers,
+        json={"code": "EMBED", "name": "Embedding Area", "status": "active"},
+    )
+    create_response = client.post(
+        "/api/knowledge/documents/upload",
+        headers=auth_headers,
+        json={
+            "scenic_area_id": area_response.json()["id"],
+            "title": "Embedding Guide",
+            "doc_type": "markdown",
+            "source_name": "embedding.md",
+            "content_text": "embedding vector chunk content " * 40,
+        },
+    )
+    document_id = create_response.json()["id"]
+    chunk = test_db_session.query(KnowledgeChunk).filter_by(document_id=document_id).first()
+    chunk.embedding_vector = b"\x9b\x00\xff"
+    test_db_session.commit()
+
+    response = client.get(f"/api/knowledge/documents/{document_id}/chunks", headers=auth_headers)
+
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert "embedding_vector" not in item
+    assert "embedding vector chunk content" in item["chunk_text"]
+
+
 def test_update_document_content_rebuilds_chunks_and_increments_version(test_db_session, auth_headers) -> None:
     client = TestClient(app)
     area_response = client.post(

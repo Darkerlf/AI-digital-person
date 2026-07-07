@@ -164,7 +164,7 @@ def test_walk_guide_service_rejects_invalid_provider_polyline(test_db_session):
     assert all(-180 <= point["longitude"] <= 180 for point in result["polyline"])
 
 
-def test_tourist_walk_guide_endpoint_returns_walkable_route(test_db_session, monkeypatch):
+def test_tourist_walk_guide_endpoint_returns_walkable_route(test_db_session, monkeypatch, visitor_auth_headers):
     area_id, first_id, second_id = _seed_walk_guide_data(test_db_session)
     monkeypatch.setattr(
         "app.api.routers.tourist_chat.WalkGuideService",
@@ -173,6 +173,7 @@ def test_tourist_walk_guide_endpoint_returns_walkable_route(test_db_session, mon
 
     response = TestClient(app).post(
         "/api/tourist/routes/walk-guide",
+        headers=visitor_auth_headers,
         json={
             "scenic_area_id": area_id,
             "spots": [

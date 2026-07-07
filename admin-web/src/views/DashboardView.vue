@@ -20,6 +20,7 @@
       </article>
     </div>
     <DashboardCharts :hot-spots="hotSpots" :trends="behaviorTrends" />
+    <p v-if="chartMessage" class="dashboard-view__notice">{{ chartMessage }}</p>
     <p v-if="errorMessage" class="dashboard-view__error">{{ errorMessage }}</p>
   </section>
 </template>
@@ -40,20 +41,47 @@ const overview = reactive({
 const hotSpots = ref<Array<Record<string, unknown>>>([])
 const behaviorTrends = ref<Array<Record<string, unknown>>>([])
 const errorMessage = ref('')
+const chartMessage = ref('')
+
+async function loadOverview() {
+  const response = await apiClient.get('/dashboard/overview')
+  Object.assign(overview, response.data)
+}
+
+async function loadCharts() {
+  const [hotSpotsResult, behaviorResult] = await Promise.allSettled([
+    apiClient.get('/dashboard/hot-spots'),
+    apiClient.get('/dashboard/behavior-trends'),
+  ])
+
+  if (hotSpotsResult.status === 'fulfilled') {
+    hotSpots.value = hotSpotsResult.value.data.items ?? hotSpotsResult.value.data
+  } else {
+    hotSpots.value = []
+  }
+
+  if (behaviorResult.status === 'fulfilled') {
+    behaviorTrends.value = behaviorResult.value.data.items ?? behaviorResult.value.data
+  } else {
+    behaviorTrends.value = []
+  }
+
+  chartMessage.value =
+    hotSpotsResult.status === 'rejected' || behaviorResult.status === 'rejected'
+      ? '图表数据暂时无法加载，概览数据仍可正常查看。'
+      : ''
+}
 
 async function loadDashboard() {
+  errorMessage.value = ''
+  chartMessage.value = ''
   try {
-    const [overviewResponse, hotSpotsResponse, behaviorResponse] = await Promise.all([
-      apiClient.get('/dashboard/overview'),
-      apiClient.get('/dashboard/hot-spots'),
-      apiClient.get('/dashboard/behavior-trends'),
-    ])
-    Object.assign(overview, overviewResponse.data)
-    hotSpots.value = hotSpotsResponse.data.items ?? hotSpotsResponse.data
-    behaviorTrends.value = behaviorResponse.data.items ?? behaviorResponse.data
-  } catch (error) {
+    await loadOverview()
+  } catch {
     errorMessage.value = '暂时无法加载运营概览数据。'
+    return
   }
+  await loadCharts()
 }
 
 onMounted(() => {
@@ -93,6 +121,11 @@ onMounted(() => {
 
 .dashboard-view__card strong {
   font-size: 28px;
+}
+
+.dashboard-view__notice {
+  margin: 0;
+  color: #936520;
 }
 
 .dashboard-view__error {

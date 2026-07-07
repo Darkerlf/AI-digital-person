@@ -16,7 +16,10 @@ const elementPlusStubs = {
       '<textarea v-if="type === \'textarea\'" :placeholder="placeholder" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />' +
       '<input v-else :placeholder="placeholder" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
   },
-  'el-option': { template: '<option><slot /></option>' },
+  'el-option': {
+    props: ['label', 'value'],
+    template: '<option :value="value"><slot>{{ label }}</slot></option>',
+  },
   'el-select': {
     props: ['modelValue'],
     emits: ['update:modelValue'],
@@ -76,11 +79,15 @@ vi.mock('../api/client', () => ({
   },
 }))
 
+async function flushForm() {
+  await Promise.resolve()
+  await nextTick()
+}
+
 describe('KnowledgeDocumentView', () => {
   it('prefills the knowledge document form from correction task query params', async () => {
     const wrapper = mount(KnowledgeDocumentView, { global: { stubs: elementPlusStubs } })
-    await Promise.resolve()
-    await nextTick()
+    await flushForm()
 
     expect((wrapper.find('input[placeholder="文档标题"]').element as HTMLInputElement).value).toContain(
       '景区半日游路线怎么安排？',
@@ -90,13 +97,24 @@ describe('KnowledgeDocumentView', () => {
     )
   })
 
+  it('uses a select list for document type instead of free text input', async () => {
+    const wrapper = mount(KnowledgeDocumentView, { global: { stubs: elementPlusStubs } })
+    await flushForm()
+
+    const text = wrapper.text()
+    expect(text).toContain('Markdown 文档')
+    expect(text).toContain('Word 文档')
+    expect(text).toContain('Excel 表格')
+    expect(text).toContain('纯文本')
+    expect(wrapper.find('input[placeholder="文档类型"]').exists()).toBe(false)
+  })
+
   it('submits correction_task_id when creating a knowledge document from a task', async () => {
     postMock.mockClear()
     const wrapper = mount(KnowledgeDocumentView, { global: { stubs: elementPlusStubs } })
-    await Promise.resolve()
-    await nextTick()
+    await flushForm()
 
-    await wrapper.find('input[placeholder="来源名称"]').setValue('manual-entry')
+    await wrapper.find('input[placeholder^="来源名称"]').setValue('manual-entry')
     await wrapper.find('form').trigger('submit.prevent')
     await Promise.resolve()
 
@@ -108,8 +126,7 @@ describe('KnowledgeDocumentView', () => {
     putMock.mockClear()
     deleteMock.mockClear()
     const wrapper = mount(KnowledgeDocumentView, { global: { stubs: elementPlusStubs } })
-    await Promise.resolve()
-    await nextTick()
+    await flushForm()
 
     const viewModel = wrapper.vm as unknown as {
       startEdit: (item: unknown) => void

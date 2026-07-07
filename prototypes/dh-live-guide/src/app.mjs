@@ -1,15 +1,23 @@
 import { createBackendClient } from './backendClient.mjs'
 import { createAvatarPresentation } from './avatarPresentation.mjs?v=idle-cover-1'
-import { createDhLiveAudioBridge, waitForDhLiveModule } from './dhLiveAudioBridge.mjs'
+import { createDhLiveAudioBridge, waitForDhLiveModule } from './dhLiveAudioBridge.mjs?v=html-audio-1'
 import { SpeechPipeline } from './speechPipeline.mjs'
 import { createBrowserWavRecorder } from './voiceRecorder.mjs'
 
 const searchParams = new URLSearchParams(location.search)
 const configuredApiBase = searchParams.get('api')
 const requestedQuestion = searchParams.get('question')
+const authToken = searchParams.get('auth')
+const digitalHumanName = normalizeUrlText(searchParams.get('guide_name'), '灵山胜境 AI 导游')
+const digitalHumanBadge = normalizeGuideBadge(digitalHumanName)
+const digitalHumanWelcomeText = normalizeUrlText(
+  searchParams.get('welcome_text'),
+  '灵山胜境位于无锡马山，是以灵山大佛为核心的国家 5A 级旅游景区，集自然风光与佛教文化于一体。我可以为您介绍景点、路线、门票与服务。',
+)
+const digitalHumanVoice = normalizeUrlText(searchParams.get('voice'), 'loongbella_v3')
 const shouldAutoSubmit = searchParams.get('auto') === '1'
 const apiBase = configuredApiBase ? [configuredApiBase] : buildLocalApiBaseUrls()
-const client = createBackendClient(apiBase)
+const client = createBackendClient(apiBase, { authToken, digitalHumanVoice })
 const form = document.getElementById('guide-form')
 const input = document.getElementById('question')
 const send = document.getElementById('send')
@@ -32,6 +40,9 @@ const feedbackComment = document.getElementById('feedback-comment')
 const feedbackSubmit = document.getElementById('feedback-submit')
 const starButtons = document.querySelectorAll('[data-star]')
 const toast = document.getElementById('toast')
+const heading = document.querySelector('.panel-heading h1')
+const hint = document.querySelector('.panel-heading .hint')
+const welcomeMessage = document.querySelector('.welcome-message .message-content')
 const presentation = createAvatarPresentation({
   stage: document.getElementById('avatar-stage'),
   dynamicCanvas: document.getElementById('canvas_video'),
@@ -54,6 +65,7 @@ let voiceStartedAt = 0
 let asrController
 
 if (requestedQuestion) input.value = requestedQuestion
+renderDigitalHumanIntro()
 
 quickQuestions.forEach((button) => {
   button.addEventListener('click', () => {
@@ -150,6 +162,11 @@ form.addEventListener('submit', async (event) => {
   const question = input.value.trim()
   if (!bridge || !question) return
 
+  try {
+    await bridge.unlock?.()
+  } catch {
+    // We still allow the text answer to render if an embedded web-view refuses audio unlock.
+  }
   activeController?.abort()
   activeController = new AbortController()
   send.disabled = true
@@ -203,6 +220,25 @@ function setStatus(label, failed = false) {
   presentation.setSpeaking(label === '讲解中')
 }
 
+function renderDigitalHumanIntro() {
+  if (heading) heading.textContent = `想了解景点和路线，直接问${digitalHumanName}`
+  if (hint) hint.textContent = `${digitalHumanName}会根据回答内容生成讲解语音，并驱动口型与表情状态。`
+  if (welcomeMessage) welcomeMessage.textContent = digitalHumanWelcomeText
+  document.querySelectorAll('.message-speaker').forEach((speaker) => {
+    speaker.textContent = digitalHumanBadge
+  })
+}
+
+function normalizeUrlText(value, fallback) {
+  const normalized = String(value || '').trim()
+  return normalized || fallback
+}
+
+function normalizeGuideBadge(name) {
+  const normalized = String(name || '').trim()
+  return Array.from(normalized)[0] || '灵'
+}
+
 function appendUserMessage(text) {
   const node = document.createElement('div')
   node.className = 'message user'
@@ -215,6 +251,8 @@ function appendAssistantMessage() {
   const fragment = messageTemplate.content.cloneNode(true)
   const card = fragment.querySelector('.message.assistant')
   const content = fragment.querySelector('.message-content')
+  const speaker = card.querySelector('.message-speaker')
+  if (speaker) speaker.textContent = digitalHumanBadge
   card.querySelectorAll('.feedback-actions button').forEach((button) => {
     button.disabled = true
   })
@@ -323,6 +361,9 @@ async function beginVoiceCapture(event) {
   } catch (error) {
     resetVoiceCapture()
     showToast(describeMicrophoneError(error))
+    if (error?.name === 'NotAllowedError') {
+      window.setTimeout(openNativeVoiceCapture, 300)
+    }
   }
 }
 
@@ -393,6 +434,13 @@ function describeMicrophoneError(error) {
   if (error?.name === 'NotAllowedError') return '请允许使用麦克风后重试'
   if (error?.name === 'NotFoundError') return '未检测到可用麦克风'
   return error?.message || '无法启动录音'
+}
+
+function openNativeVoiceCapture() {
+  if (!window.wx?.miniProgram?.navigateTo) return
+  window.wx.miniProgram.navigateTo({
+    url: '/pages/voice-capture/voice-capture',
+  })
 }
 
 function requestGuideSubmit() {
